@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css'; // Global styles
 
@@ -8,11 +8,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Planejamento Financeiro 360',
-  description: 'Plataforma completa para gestão e planejamento financeiro pessoal.',
+  title: 'WealthCash — Planejamento Financeiro Inteligente',
+  description: 'Plataforma completa para gestão e planejamento financeiro pessoal com consultoria IA.',
 };
 
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${inter.variable}`}>
       <body className="font-sans bg-zinc-50 text-zinc-900 antialiased" suppressHydrationWarning>
