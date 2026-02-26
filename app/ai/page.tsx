@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { AIAdvisor } from '@/components/AIAdvisor';
 import { motion } from 'motion/react';
 import { Sparkles, TrendingUp, Shield, Lightbulb } from 'lucide-react';
+import { useState, useRef } from 'react';
 
 const suggestions = [
     { icon: TrendingUp, label: 'Como estão meus gastos este mês?' },
@@ -13,6 +14,17 @@ const suggestions = [
 ];
 
 export default function AIPage() {
+    const [chipMessage, setChipMessage] = useState('');
+    const advisorRef = useRef<{ sendFromChip: (msg: string) => void } | null>(null);
+
+    const handleChipClick = (label: string) => {
+        setChipMessage(label);
+        // Send directly via ref
+        if (advisorRef.current) {
+            advisorRef.current.sendFromChip(label);
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="max-w-4xl mx-auto space-y-6">
@@ -27,7 +39,7 @@ export default function AIPage() {
                     </p>
                 </motion.div>
 
-                {/* Suggestion chips - clickable */}
+                {/* Suggestion chips - clickable and functional */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -37,7 +49,8 @@ export default function AIPage() {
                     {suggestions.map((s, i) => (
                         <button
                             key={i}
-                            className="flex items-center space-x-3 bg-white border border-zinc-200 p-3.5 hover:bg-zinc-50 hover:border-zinc-300 transition-all text-left group"
+                            onClick={() => handleChipClick(s.label)}
+                            className="flex items-center space-x-3 bg-white border border-zinc-200 p-3.5 hover:bg-zinc-50 hover:border-zinc-300 transition-all text-left group active:scale-[0.98]"
                         >
                             <div className="w-9 h-9 border border-zinc-200 flex items-center justify-center flex-shrink-0 group-hover:border-zinc-300 transition-colors">
                                 <s.icon className="w-4 h-4 text-zinc-600" />
@@ -71,7 +84,7 @@ export default function AIPage() {
                     transition={{ delay: 0.2 }}
                     className="[&>div]:h-[500px] sm:[&>div]:h-[600px]"
                 >
-                    <AIAdvisor />
+                    <AIAdvisor ref={advisorRef} initialMessage={chipMessage} />
                 </motion.div>
             </div>
         </DashboardLayout>
