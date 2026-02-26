@@ -1,0 +1,23 @@
+{
+    "name": "WealthCash",
+    "short_name": "WealthCash",
+    "description": "Planejamento financeiro inteligente com IA",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#FCFCFA",
+    "theme_color": "#0A0A0A",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "finance",
+        "productivity"
+    ],
+    "lang": "pt-BR"
+}

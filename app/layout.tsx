@@ -46,6 +46,11 @@ export const metadata: Metadata = {
     ],
     apple: '/favicon.svg',
   },
+  manifest: '/manifest.json',
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

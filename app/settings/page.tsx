@@ -1,10 +1,10 @@
 'use client';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'motion/react';
-import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink } from 'lucide-react';
+import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera } from 'lucide-react';
 
 function SettingsSkeleton() {
     return (
@@ -76,6 +76,7 @@ export default function SettingsPage() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [photo, setPhoto] = useState<string | null>(null);
     const [profileMsg, setProfileMsg] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
     const [profileError, setProfileError] = useState('');
@@ -84,7 +85,23 @@ export default function SettingsPage() {
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [planLoading, setPlanLoading] = useState('');
 
+    useEffect(() => {
+        if (session?.user?.image) setPhoto(session.user.image);
+    }, [session]);
+
     if (status === 'loading') return <SettingsSkeleton />;
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 4 * 1024 * 1024) {
+            setProfileError('A imagem deve ter no máximo 4MB.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => setPhoto(reader.result as string);
+        reader.readAsDataURL(file);
+    };
 
     const saveProfile = async () => {
         if (!name.trim()) { setProfileError('Nome é obrigatório.'); return; }
@@ -98,9 +115,18 @@ export default function SettingsPage() {
                 body: JSON.stringify({ name: name.trim() }),
             });
             const data = await res.json();
+
+            if (photo && photo !== session?.user?.image) {
+                await fetch('/api/user/profile-photo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: photo }),
+                });
+            }
+
             if (res.ok) {
-                setProfileMsg('Perfil atualizado!');
-                update({ name: name.trim() });
+                setProfileMsg('Perfil atualizado! As mudanças visuais podem demorar um pouco devido ao cache.');
+                update({ name: name.trim(), image: photo });
             } else {
                 setProfileError(data.error || 'Erro ao salvar.');
             }
@@ -237,13 +263,21 @@ export default function SettingsPage() {
                     transition={{ delay: 0.1 }}
                     className="bg-white border border-zinc-200 p-6"
                 >
-                    <div className="flex items-center space-x-3 mb-5">
-                        <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center">
-                            <User className="w-5 h-5 text-zinc-600" />
+                    <div className="flex items-center space-x-4 mb-6">
+                        <div className="w-14 h-14 border border-zinc-200 flex items-center justify-center bg-zinc-50 relative overflow-hidden group/avatar">
+                            {photo ? (
+                                <img src={photo} alt={name} className="w-full h-full object-cover" />
+                            ) : (
+                                <User className="w-6 h-6 text-zinc-600" />
+                            )}
+                            <label className="absolute inset-0 bg-black/50 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-white text-[10px] uppercase font-bold tracking-wider">
+                                <Camera className="w-4 h-4 mb-0.5" />
+                                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                            </label>
                         </div>
                         <div>
                             <h2 className="font-editorial font-semibold text-zinc-900">Perfil</h2>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Altere seu nome de exibição</p>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Altere seu nome e foto</p>
                         </div>
                     </div>
 

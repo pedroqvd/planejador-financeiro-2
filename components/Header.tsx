@@ -1,10 +1,11 @@
 'use client';
 
-import { Bell, Search, Menu, LogOut, X, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { Bell, Search, Menu, LogOut, X, AlertTriangle, CheckCircle, Info, Moon, Sun } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTheme } from '@/components/ThemeProvider';
 
 type SearchResult = {
   transactions: { id: string; name: string; category: string; amount: number; type: string; date: string }[];
@@ -31,6 +32,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const userName = session?.user?.name || 'Usuário';
   const initials = userName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
   const plan = session?.user?.plan || 'free';
+  const { theme, toggleTheme } = useTheme();
 
   // Search state
   const [query, setQuery] = useState('');
@@ -169,6 +171,15 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
       </div>
 
       <div className="flex items-center space-x-2 sm:space-x-4">
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 text-zinc-500 hover:text-zinc-900 transition-colors duration-200 hover:bg-zinc-100 rounded-full"
+          title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+        >
+          {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+        </button>
+
         {/* Notifications */}
         <div ref={notifRef} className="relative">
           <button
@@ -236,7 +247,11 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
             </span>
           </div>
           <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-zinc-200 bg-zinc-50 flex items-center justify-center">
-            <span className="text-xs font-bold font-editorial text-zinc-900">{initials}</span>
+            {session?.user?.image ? (
+              <img src={session.user.image} alt={userName} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xs font-bold font-editorial text-zinc-900">{initials}</span>
+            )}
           </div>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
