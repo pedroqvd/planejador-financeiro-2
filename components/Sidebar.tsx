@@ -8,12 +8,15 @@ import {
   ArrowLeftRight,
   Settings,
   LogOut,
-  Sparkles
+  Sparkles,
+  X,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { signOut } from 'next-auth/react';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -21,28 +24,29 @@ const navItems = [
   { name: 'Orçamento', href: '/budget', icon: Wallet },
   { name: 'Investimentos', href: '/investments', icon: PieChart },
   { name: 'Objetivos', href: '/goals', icon: Target },
-  { name: 'IA Advisor', href: '/advisor', icon: Sparkles },
+  { name: 'IA Advisor', href: '/ai', icon: Sparkles },
 ];
 
-export function Sidebar() {
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <motion.div
-      initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="hidden md:flex flex-col w-64 h-full"
-      style={{ background: 'var(--gradient-sidebar)' }}
-    >
-      <div className="p-6 flex items-center space-x-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25">
-          <PieChart className="w-5 h-5 text-white" />
+    <>
+      <div className="p-6 pt-8 pb-10 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-full border border-zinc-200 flex items-center justify-center bg-white shadow-sm">
+            <span className="font-editorial text-lg text-zinc-900 leading-none">W</span>
+          </div>
+          <span className="text-xl font-editorial font-bold tracking-tight text-zinc-900">WealthCash</span>
         </div>
-        <span className="text-lg font-bold tracking-tight text-white">WealthCash</span>
+        {onClose && (
+          <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-all md:hidden">
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto mt-2">
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {navItems.map((item, index) => {
           const isActive = pathname === item.href;
           return (
@@ -54,23 +58,24 @@ export function Sidebar() {
             >
               <Link
                 href={item.href}
+                onClick={onClose}
                 className={clsx(
-                  'relative flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                  'relative flex items-center space-x-3 px-3 py-2.5 rounded-none text-sm font-medium transition-all duration-200',
                   isActive
-                    ? 'bg-white/15 text-white shadow-lg shadow-black/10'
-                    : 'text-slate-400 hover:bg-white/8 hover:text-slate-200'
+                    ? 'text-zinc-900 bg-zinc-100'
+                    : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-indicator"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-gradient-to-b from-indigo-400 to-purple-500 rounded-r-full"
+                    className="absolute left-0 top-0 bottom-0 w-[2px] bg-zinc-900"
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                   />
                 )}
                 <item.icon className={clsx(
-                  'w-5 h-5 transition-colors duration-200',
-                  isActive ? 'text-indigo-400' : 'text-slate-500'
+                  'w-[18px] h-[18px] transition-colors duration-200',
+                  isActive ? 'text-zinc-900' : 'text-zinc-400'
                 )} />
                 <span>{item.name}</span>
               </Link>
@@ -79,21 +84,70 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/10 space-y-1">
+      <div className="p-4 border-t border-zinc-200 space-y-1">
         <Link
           href="/settings"
-          className="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/8 hover:text-slate-200 transition-all duration-200"
+          onClick={onClose}
+          className={clsx(
+            'flex items-center space-x-3 px-3 py-2.5 rounded-none text-sm font-medium transition-all duration-200',
+            pathname === '/settings'
+              ? 'text-zinc-900 bg-zinc-100'
+              : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
+          )}
         >
-          <Settings className="w-5 h-5 text-slate-500" />
+          <Settings className={clsx('w-[18px] h-[18px]', pathname === '/settings' ? 'text-zinc-900' : 'text-zinc-400')} />
           <span>Configurações</span>
         </Link>
         <button
-          className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/8 hover:text-slate-200 transition-all duration-200"
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-none text-sm font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 transition-all duration-200"
         >
-          <LogOut className="w-5 h-5 text-slate-500" />
+          <LogOut className="w-[18px] h-[18px] text-zinc-400" />
           <span>Sair</span>
         </button>
       </div>
+    </>
+  );
+}
+
+// Desktop sidebar
+export function Sidebar() {
+  return (
+    <motion.div
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="hidden md:flex flex-col w-64 h-full border-r border-zinc-200 bg-[#FCFCFA]"
+    >
+      <SidebarContent />
     </motion.div>
+  );
+}
+
+// Mobile sidebar overlay
+export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-zinc-900/20 backdrop-blur-sm md:hidden"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ x: -280 }}
+            animate={{ x: 0 }}
+            exit={{ x: -280 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden border-r border-zinc-200 bg-[#FCFCFA]"
+          >
+            <SidebarContent onClose={onClose} />
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

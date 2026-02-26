@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String        @id @default(cuid())
+  name                 String
+  email                String        @unique
+  password             String
+  plan                 String        @default("free") // free, pro, premium
+  stripeCustomerId     String?       @unique
+  stripeSubscriptionId String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  transactions         Transaction[]
+  budgets              Budget[]
+  goals                Goal[]
+
+  @@index([email])
+}
+
+model Transaction {
+  id       String   @id @default(cuid())
+  name     String
+  category String
+  amount   Float
+  type     String
+  date     DateTime @default(now())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, type, date])
+}
+
+model Budget {
+  id       String @id @default(cuid())
+  category String
+  limit    Float
+  spent    Float  @default(0)
+  month    String
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, month])
+  @@index([userId])
+}
+
+model Goal {
+  id                String   @id @default(cuid())
+  name              String
+  icon              String   @default("Target")
+  target            Float
+  current           Float    @default(0)
+  deadline          String
+  monthlySuggestion Float    @default(0)
+  color             String   @default("sky")
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+}

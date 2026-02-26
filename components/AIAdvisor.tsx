@@ -1,164 +1,162 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Send, Bot, User, Loader2 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
-import { clsx } from 'clsx';
-import ReactMarkdown from 'react-markdown';
+import { Sparkles, Send, Loader2, Bot, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+type Message = {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export function AIAdvisor() {
-  const [messages, setMessages] = useState<{ role: 'user' | 'model'; text: string }[]>([
+  const [messages, setMessages] = useState<Message[]>([
     {
-      role: 'model',
-      text: 'Olá! Sou seu consultor financeiro IA. Como posso ajudar com seu planejamento hoje?'
-    }
+      id: 'welcome',
+      role: 'assistant',
+      content: 'Olá! Sou o **Cash**, seu consultor financeiro IA. Posso analisar suas finanças e dar conselhos personalizados. Pergunte algo como:\n\n• "Como estão meus gastos este mês?"\n• "Dicas para economizar mais"\n• "Análise meu orçamento"',
+    },
   ]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
 
-    const userMessage = input.trim();
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input.trim(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
-    setMessages((prev) => [...prev, { role: 'user', text: userMessage }]);
-    setIsLoading(true);
+    setLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: userMessage,
-        config: {
-          systemInstruction: 'Você é um consultor financeiro especializado em finanças pessoais, investimentos e planejamento 360 graus. Seja prestativo, claro, objetivo e use formatação markdown para destacar pontos importantes. Responda em português do Brasil.',
-        }
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage.content }),
       });
 
-      if (response.text) {
-        setMessages((prev) => [...prev, { role: 'model', text: response.text || '' }]);
-      }
-    } catch (error) {
-      console.error('Error generating AI response:', error);
-      setMessages((prev) => [
+      const data = await res.json();
+
+      setMessages(prev => [
         ...prev,
-        { role: 'model', text: 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente mais tarde.' }
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: res.ok
+            ? data.reply
+            : data.error || 'Erro ao consultar IA.',
+        },
+      ]);
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexão. Tente novamente.' },
       ]);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5, duration: 0.4 }}
-      className="bg-white rounded-2xl border border-zinc-100/80 shadow-sm flex flex-col h-[600px] overflow-hidden"
-    >
-      <div className="p-5 bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center space-x-3 shrink-0">
-        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-          <Sparkles className="w-5 h-5 text-white" />
+    <div className="bg-white border border-zinc-200 flex flex-col h-[500px]">
+      {/* Header */}
+      <div className="bg-zinc-900 px-5 py-4 flex items-center space-x-3">
+        <div className="w-8 h-8 border border-zinc-700 flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-zinc-400" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white">IA Advisor</h2>
-          <p className="text-sm text-indigo-200">Consultoria financeira inteligente</p>
+          <h3 className="text-white font-editorial font-bold text-sm">Cash — IA Advisor</h3>
+          <p className="text-zinc-500 text-[10px] uppercase tracking-wider">Consultoria financeira inteligente</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 space-y-5">
-        <AnimatePresence mode="popLayout">
-          {messages.map((msg, index) => (
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <AnimatePresence>
+          {messages.map((msg) => (
             <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.25 }}
-              className={clsx(
-                'flex space-x-3',
-                msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-              )}
+              key={msg.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className={`flex items-start space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}
             >
-              <div
-                className={clsx(
-                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-br from-slate-700 to-slate-900'
-                    : 'bg-gradient-to-br from-indigo-100 to-purple-100'
-                )}
-              >
-                {msg.role === 'user' ? (
-                  <User className="w-4 h-4 text-white" />
-                ) : (
-                  <Bot className="w-4 h-4 text-indigo-600" />
-                )}
+              <div className={`w-7 h-7 flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant'
+                ? 'border border-zinc-200 text-zinc-500'
+                : 'bg-zinc-900 text-white'
+                }`}>
+                {msg.role === 'assistant' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
               </div>
-              <div
-                className={clsx(
-                  'max-w-[80%] rounded-2xl px-4 py-3 text-sm',
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-br from-slate-800 to-slate-900 text-white rounded-tr-sm'
-                    : 'bg-zinc-50 text-zinc-800 rounded-tl-sm border border-zinc-100'
-                )}
-              >
-                {msg.role === 'model' ? (
-                  <div className="prose prose-sm prose-zinc max-w-none">
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <p>{msg.text}</p>
-                )}
+              <div className={`max-w-[80%] px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'assistant'
+                ? 'bg-zinc-50 text-zinc-800 border border-zinc-100'
+                : 'bg-zinc-900 text-white'
+                }`}>
+                {msg.content.split('\n').map((line, i) => (
+                  <span key={i}>
+                    {line.split('**').map((part, j) =>
+                      j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+                    )}
+                    {i < msg.content.split('\n').length - 1 && <br />}
+                  </span>
+                ))}
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
-        {isLoading && (
+
+        {loading && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex space-x-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center space-x-2"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 text-indigo-600" />
+            <div className="w-7 h-7 border border-zinc-200 text-zinc-500 flex items-center justify-center">
+              <Bot className="w-3.5 h-3.5" />
             </div>
-            <div className="bg-zinc-50 border border-zinc-100 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center space-x-2">
-              <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
-              <span className="text-sm text-zinc-500">Analisando...</span>
+            <div className="bg-zinc-50 border border-zinc-100 px-4 py-3">
+              <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
             </div>
           </motion.div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-zinc-100 shrink-0">
-        <form onSubmit={handleSubmit} className="relative gradient-border rounded-xl">
+      {/* Input */}
+      <div className="p-3 border-t border-zinc-200">
+        <form
+          onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
+          className="flex items-center space-x-2"
+        >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Pergunte sobre seus investimentos..."
-            className="w-full pl-4 pr-12 py-3 bg-zinc-50/80 border border-zinc-200/70 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-indigo-200 transition-all duration-300"
-            disabled={isLoading}
+            placeholder="Pergunte sobre suas finanças..."
+            className="flex-1 px-4 py-2.5 bg-zinc-50 border-0 border-b border-zinc-200 rounded-none text-sm focus:outline-none focus:border-zinc-900 transition-all"
+            maxLength={500}
+            disabled={loading}
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-zinc-400 hover:text-indigo-600 disabled:opacity-40 disabled:hover:text-zinc-400 transition-all duration-200 hover:scale-110 active:scale-95"
+            disabled={loading || !input.trim()}
+            className="p-2.5 bg-zinc-900 text-white hover:bg-zinc-800 transition-all disabled:opacity-40"
           >
             <Send className="w-4 h-4" />
           </button>
         </form>
       </div>
-    </motion.div>
+    </div>
   );
 }

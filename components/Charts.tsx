@@ -11,24 +11,17 @@ import {
 } from 'recharts';
 import { motion } from 'motion/react';
 
-const data = [
-  { name: 'Jan', receitas: 10000, despesas: 4000 },
-  { name: 'Fev', receitas: 11000, despesas: 3800 },
-  { name: 'Mar', receitas: 10500, despesas: 4200 },
-  { name: 'Abr', receitas: 12000, despesas: 4500 },
-  { name: 'Mai', receitas: 11500, despesas: 4100 },
-  { name: 'Jun', receitas: 12450, despesas: 4230 },
-];
+type ChartData = { name: string; receitas: number; despesas: number }[];
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="glass rounded-xl border border-zinc-200/60 px-4 py-3 shadow-lg">
-        <p className="text-xs font-semibold text-zinc-500 mb-2">{label}</p>
+      <div className="bg-white border border-zinc-200 px-4 py-3 shadow-md">
+        <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-2">{label}</p>
         {payload.map((item) => (
           <div key={item.dataKey} className="flex items-center space-x-2 mb-1 last:mb-0">
-            <div className={`w-2 h-2 rounded-full ${item.dataKey === 'receitas' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-            <span className="text-sm font-semibold text-zinc-800">
+            <div className={`w-2 h-2 ${item.dataKey === 'receitas' ? 'bg-zinc-900' : 'bg-zinc-400'}`} />
+            <span className="text-sm font-editorial font-bold text-zinc-800">
               R$ {item.value.toLocaleString('pt-BR')}
             </span>
           </div>
@@ -39,86 +32,77 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null;
 };
 
-export function Charts() {
+function ChartSkeleton() {
+  return (
+    <div className="h-[300px] w-full animate-pulse">
+      <div className="h-full flex items-end space-x-3 px-4 pb-6">
+        {[65, 40, 80, 55, 70, 45].map((h, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center space-y-2">
+            <div className="w-full bg-zinc-100" style={{ height: `${h}%` }} />
+            <div className="h-3 w-6 bg-zinc-100" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function Charts({ data, loading }: { data: ChartData; loading?: boolean }) {
+  const hasData = data.some(d => d.receitas > 0 || d.despesas > 0);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.4 }}
-      className="bg-white rounded-2xl p-6 border border-zinc-100/80 shadow-sm"
+      className="bg-white p-6 border border-zinc-200"
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-lg font-bold text-zinc-900">Receitas vs Despesas</h2>
-          <p className="text-sm text-zinc-500">Últimos 6 meses</p>
+          <h2 className="text-lg font-editorial font-bold text-zinc-900">Receitas vs Despesas</h2>
+          <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Últimos 6 meses</p>
         </div>
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" />
-            <span className="text-zinc-600 font-medium">Receitas</span>
+            <div className="w-3 h-[2px] bg-zinc-900" />
+            <span className="text-zinc-600 text-xs font-medium">Receitas</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-rose-400 to-rose-600" />
-            <span className="text-zinc-600 font-medium">Despesas</span>
+            <div className="w-3 h-[2px] bg-zinc-400" />
+            <span className="text-zinc-600 text-xs font-medium">Despesas</span>
           </div>
         </div>
       </div>
 
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                <stop offset="50%" stopColor="#10b981" stopOpacity={0.08} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
-                <stop offset="50%" stopColor="#f43f5e" stopOpacity={0.08} />
-                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-              dy={10}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-              tickFormatter={(value) => `${value / 1000}k`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="receitas"
-              stroke="#10b981"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#colorReceitas)"
-              dot={false}
-              activeDot={{ r: 5, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
-            />
-            <Area
-              type="monotone"
-              dataKey="despesas"
-              stroke="#f43f5e"
-              strokeWidth={2.5}
-              fillOpacity={1}
-              fill="url(#colorDespesas)"
-              dot={false}
-              activeDot={{ r: 5, fill: '#f43f5e', stroke: '#fff', strokeWidth: 2 }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        {loading ? (
+          <ChartSkeleton />
+        ) : hasData ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#18181b" stopOpacity={0.08} />
+                  <stop offset="95%" stopColor="#18181b" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorDespesas" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#a1a1aa" stopOpacity={0.08} />
+                  <stop offset="95%" stopColor="#a1a1aa" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f4f4f5" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }} tickFormatter={(value) => `${value / 1000}k`} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey="receitas" stroke="#18181b" strokeWidth={2} fillOpacity={1} fill="url(#colorReceitas)" dot={false} activeDot={{ r: 4, fill: '#18181b', stroke: '#fff', strokeWidth: 2 }} />
+              <Area type="monotone" dataKey="despesas" stroke="#a1a1aa" strokeWidth={2} fillOpacity={1} fill="url(#colorDespesas)" dot={false} activeDot={{ r: 4, fill: '#a1a1aa', stroke: '#fff', strokeWidth: 2 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center text-zinc-400 text-sm">
+            Adicione transações para ver o gráfico
+          </div>
+        )}
       </div>
     </motion.div>
   );
