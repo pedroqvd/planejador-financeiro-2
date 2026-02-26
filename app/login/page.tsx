@@ -91,8 +91,12 @@ export default function LoginPage() {
                                     required
                                 />
                             </div>
+                            <div className="text-right">
+                                <a href="/forgot-password" className="text-xs text-zinc-500 hover:text-zinc-900 uppercase tracking-wider transition-colors">
+                                    Esqueci minha senha
+                                </a>
+                            </div>
                         </div>
-
                         {error && (
                             <motion.div
                                 initial={{ opacity: 0, y: -4 }}

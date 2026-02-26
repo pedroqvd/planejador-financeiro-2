@@ -134,6 +134,78 @@ export async function POST(request: Request) {
     }
 }
 
+export async function PUT(request: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    try {
+        let body;
+        try { body = await request.json(); }
+        catch { return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 }); }
+
+        const { id } = body;
+        if (!id || typeof id !== 'string') {
+            return NextResponse.json({ error: 'ID é obrigatório.' }, { status: 400 });
+        }
+
+        // IDOR protection
+        const existing = await prisma.transaction.findFirst({
+            where: { id, userId: session.user.id },
+        });
+        if (!existing) {
+            return NextResponse.json({ error: 'Transação não encontrada.' }, { status: 404 });
+        }
+
+        const name = sanitize(String(body.name || ''));
+        const category = sanitize(String(body.category || ''));
+        const amount = parseFloat(body.amount);
+        const type = String(body.type || '');
+
+        if (!name || !category) {
+            return NextResponse.json({ error: 'Nome e categoria são obrigatórios.' }, { status: 400 });
+        }
+        if (!VALID_TYPES.includes(type as typeof VALID_TYPES[number])) {
+            return NextResponse.json({ error: 'Tipo deve ser "income" ou "expense".' }, { status: 400 });
+        }
+        if (!VALID_CATEGORIES.includes(category)) {
+            return NextResponse.json({ error: 'Categoria inválida.' }, { status: 400 });
+        }
+        if (isNaN(amount) || amount <= 0 || amount > MAX_AMOUNT) {
+            return NextResponse.json({ error: 'Valor inválido.' }, { status: 400 });
+        }
+
+        // Revert old budget impact
+        if (existing.type === 'expense') {
+            const oldMonth = new Date(existing.date).toISOString().slice(0, 7);
+            await prisma.budget.updateMany({
+                where: { userId: session.user.id, category: existing.category, month: oldMonth },
+                data: { spent: { decrement: existing.amount } },
+            });
+        }
+
+        const updated = await prisma.transaction.update({
+            where: { id },
+            data: { name, category, amount, type },
+        });
+
+        // Apply new budget impact
+        if (type === 'expense') {
+            const newMonth = new Date(updated.date).toISOString().slice(0, 7);
+            await prisma.budget.updateMany({
+                where: { userId: session.user.id, category, month: newMonth },
+                data: { spent: { increment: amount } },
+            });
+        }
+
+        return NextResponse.json(updated);
+    } catch (error) {
+        console.error('Update transaction error:', error);
+        return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });
+    }
+}
+
 export async function DELETE(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {

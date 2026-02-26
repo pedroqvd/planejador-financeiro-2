@@ -1,24 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const categories = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
 
+type Transaction = {
+    id: string;
+    name: string;
+    category: string;
+    amount: number;
+    type: string;
+    date: string;
+};
+
 export function AddTransactionModal({
     onClose,
     onSuccess,
+    editTransaction,
 }: {
     onClose: () => void;
     onSuccess: () => void;
+    editTransaction?: Transaction | null;
 }) {
-    const [name, setName] = useState('');
-    const [category, setCategory] = useState('Alimentação');
-    const [amount, setAmount] = useState('');
-    const [type, setType] = useState<'expense' | 'income'>('expense');
+    const isEditing = !!editTransaction;
+    const [name, setName] = useState(editTransaction?.name || '');
+    const [category, setCategory] = useState(editTransaction?.category || 'Alimentação');
+    const [amount, setAmount] = useState(editTransaction ? String(editTransaction.amount) : '');
+    const [type, setType] = useState<'expense' | 'income'>(
+        (editTransaction?.type as 'expense' | 'income') || 'expense'
+    );
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (editTransaction) {
+            setName(editTransaction.name);
+            setCategory(editTransaction.category);
+            setAmount(String(editTransaction.amount));
+            setType(editTransaction.type as 'expense' | 'income');
+        }
+    }, [editTransaction]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,9 +50,15 @@ export function AddTransactionModal({
 
         try {
             const res = await fetch('/api/transactions', {
-                method: 'POST',
+                method: isEditing ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, category, amount, type }),
+                body: JSON.stringify({
+                    ...(isEditing ? { id: editTransaction!.id } : {}),
+                    name,
+                    category,
+                    amount,
+                    type,
+                }),
             });
 
             if (!res.ok) {
@@ -56,7 +85,9 @@ export function AddTransactionModal({
                 className="relative bg-white border border-zinc-200 p-6 w-full max-w-md shadow-2xl"
             >
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-editorial font-bold text-zinc-900">Nova Transação</h2>
+                    <h2 className="text-lg font-editorial font-bold text-zinc-900">
+                        {isEditing ? 'Editar Transação' : 'Nova Transação'}
+                    </h2>
                     <button onClick={onClose} className="p-1.5 hover:bg-zinc-100 transition-colors">
                         <X className="w-5 h-5 text-zinc-500" />
                     </button>
@@ -67,7 +98,7 @@ export function AddTransactionModal({
                     <div className="flex border border-zinc-200">
                         <button
                             type="button"
-                            onClick={() => { setType('expense'); setCategory('Alimentação'); }}
+                            onClick={() => { setType('expense'); if (!isEditing) setCategory('Alimentação'); }}
                             className={`flex-1 py-2.5 text-xs font-medium uppercase tracking-wider transition-all duration-200 ${type === 'expense' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-50'
                                 }`}
                         >
@@ -75,7 +106,7 @@ export function AddTransactionModal({
                         </button>
                         <button
                             type="button"
-                            onClick={() => { setType('income'); setCategory('Salário'); }}
+                            onClick={() => { setType('income'); if (!isEditing) setCategory('Salário'); }}
                             className={`flex-1 py-2.5 text-xs font-medium uppercase tracking-wider transition-all duration-200 ${type === 'income' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-50'
                                 }`}
                         >
@@ -136,7 +167,7 @@ export function AddTransactionModal({
                         {loading ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                            <span>Salvar Transação</span>
+                            <span>{isEditing ? 'Salvar Alterações' : 'Salvar Transação'}</span>
                         )}
                     </button>
                 </form>

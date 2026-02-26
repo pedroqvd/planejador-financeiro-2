@@ -1,7 +1,8 @@
 'use client';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { Plus, Upload, Home, ShoppingCart, Car, Coffee, Wallet } from 'lucide-react';
+import { EditBudgetModal } from '@/components/EditBudgetModal';
+import { Plus, Home, ShoppingCart, Car, Coffee, Wallet, Pencil } from 'lucide-react';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
@@ -25,6 +26,8 @@ const categoryMeta: Record<string, { icon: React.ComponentType<{ className?: str
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editBudget, setEditBudget] = useState<Budget | null>(null);
 
   const loadBudgets = useCallback(async () => {
     try {
@@ -41,6 +44,11 @@ export default function BudgetPage() {
   const totalLimit = budgets.reduce((s, b) => s + b.limit, 0);
   const available = totalLimit - totalSpent;
 
+  const handleEditClick = (budget: Budget) => {
+    setEditBudget(budget);
+    setShowModal(true);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -54,16 +62,13 @@ export default function BudgetPage() {
             <h1 className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">Orçamento</h1>
             <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Gerencie seus limites de gastos por categoria</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <button className="flex items-center space-x-2 px-4 py-2.5 border border-zinc-200 text-xs font-medium text-zinc-700 uppercase tracking-wider hover:bg-zinc-50 transition-all">
-              <Upload className="w-4 h-4" />
-              <span>Importar Extrato</span>
-            </button>
-            <button className="flex items-center space-x-2 px-4 py-2.5 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all">
-              <Plus className="w-4 h-4" />
-              <span>Nova Transação</span>
-            </button>
-          </div>
+          <button
+            onClick={() => { setEditBudget(null); setShowModal(true); }}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nova Categoria</span>
+          </button>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -97,7 +102,9 @@ export default function BudgetPage() {
                   ))}
                 </div>
               ) : budgets.length === 0 ? (
-                <div className="text-center py-8 text-zinc-400 text-sm">Nenhum orçamento configurado.</div>
+                <div className="text-center py-8 text-zinc-400 text-sm">
+                  Nenhum orçamento configurado. Clique em &quot;Nova Categoria&quot; para começar.
+                </div>
               ) : (
                 <div className="space-y-6">
                   {budgets.map((budget, index) => {
@@ -113,7 +120,7 @@ export default function BudgetPage() {
                         initial={{ opacity: 0, x: -12 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + index * 0.08, duration: 0.3 }}
-                        className="space-y-2"
+                        className="space-y-2 group"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -127,13 +134,22 @@ export default function BudgetPage() {
                               </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className={clsx('text-sm font-editorial font-bold', isOverBudget ? 'text-zinc-900' : 'text-zinc-900')}>
-                              R$ {budget.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                              de R$ {budget.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
+                          <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                              <p className={clsx('text-sm font-editorial font-bold', isOverBudget ? 'text-zinc-900' : 'text-zinc-900')}>
+                                R$ {budget.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                                de R$ {budget.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleEditClick(budget)}
+                              className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-zinc-100 transition-all"
+                              title="Editar limite"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-zinc-400" />
+                            </button>
                           </div>
                         </div>
                         <div className="h-1.5 w-full bg-zinc-100 overflow-hidden">
@@ -189,6 +205,14 @@ export default function BudgetPage() {
           </motion.div>
         </div>
       </div>
+
+      {showModal && (
+        <EditBudgetModal
+          onClose={() => { setShowModal(false); setEditBudget(null); }}
+          onSuccess={() => { setShowModal(false); setEditBudget(null); loadBudgets(); }}
+          budget={editBudget}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -25,6 +25,7 @@ export default function TransactionsPage() {
   const [showImport, setShowImport] = useState(false);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [exporting, setExporting] = useState(false);
+  const [editTransaction, setEditTransaction] = useState<Transaction | null>(null);
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -50,6 +51,15 @@ export default function TransactionsPage() {
   const totalExpense = transactions
     .filter(t => t.type === 'expense')
     .reduce((s, t) => s + t.amount, 0);
+
+  const handleEdit = (tx: Transaction) => {
+    setEditTransaction(tx);
+    setShowModal(true);
+  };
+
+  const handleDelete = (id: string) => {
+    setTransactions(prev => prev.filter(t => t.id !== id));
+  };
 
   return (
     <DashboardLayout>
@@ -91,7 +101,7 @@ export default function TransactionsPage() {
               <span className="hidden sm:inline">Exportar PDF</span>
             </button>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={() => { setEditTransaction(null); setShowModal(true); }}
               className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all"
             >
               <Plus className="w-4 h-4" />
@@ -102,36 +112,21 @@ export default function TransactionsPage() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 border border-zinc-200 divide-x divide-zinc-200">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="p-5"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-5">
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Total Receitas</p>
             <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">
               R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="p-5"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-5">
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Total Despesas</p>
             <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">
               R$ {totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="p-5"
-          >
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-5">
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Saldo</p>
-            <p className={`text-xl font-editorial font-bold mt-1 text-zinc-900`}>
+            <p className="text-xl font-editorial font-bold mt-1 text-zinc-900">
               R$ {(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </motion.div>
@@ -156,14 +151,15 @@ export default function TransactionsPage() {
         {loading ? (
           <TransactionsSkeleton />
         ) : (
-          <Transactions data={filtered} />
+          <Transactions data={filtered} onEdit={handleEdit} onDelete={handleDelete} />
         )}
       </div>
 
       {showModal && (
         <AddTransactionModal
-          onClose={() => setShowModal(false)}
-          onSuccess={() => { setShowModal(false); loadTransactions(); }}
+          onClose={() => { setShowModal(false); setEditTransaction(null); }}
+          onSuccess={() => { setShowModal(false); setEditTransaction(null); loadTransactions(); }}
+          editTransaction={editTransaction}
         />
       )}
 
