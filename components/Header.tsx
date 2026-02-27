@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/components/ThemeProvider';
+import Image from 'next/image';
 
 type SearchResult = {
   transactions: { id: string; name: string; category: string; amount: number; type: string; date: string }[];
@@ -58,6 +59,21 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
     } catch { /* ignore */ }
     finally { setNotifsLoaded(true); }
   }, []);
+
+  const markAsRead = async (id: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      if (id === 'all') {
+        setNotifications([]);
+      } else {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+      }
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => { loadNotifications(); }, [loadNotifications]);
 
@@ -201,8 +217,13 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 transition={{ duration: 0.15 }}
                 className="absolute right-0 top-full mt-2 w-80 bg-white border border-zinc-200 shadow-xl z-50"
               >
-                <div className="px-4 py-3 border-b border-zinc-100">
+                <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
                   <h3 className="text-xs font-medium text-zinc-900 uppercase tracking-wider">Notificações</h3>
+                  {notifications.length > 0 && (
+                    <button onClick={() => markAsRead('all')} className="text-[10px] text-zinc-500 hover:text-zinc-900 uppercase tracking-wider transition-colors">
+                      Marcar lídas
+                    </button>
+                  )}
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {!notifsLoaded ? (
@@ -215,19 +236,22 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                       <p className="text-[10px] text-zinc-300 uppercase tracking-wider mt-1">Tudo em dia!</p>
                     </div>
                   ) : (
-                    notifications.map((n) => {
+                    notifications.map((n: any) => {
                       const IconComp = notifIcons[n.type] || Info;
                       return (
                         <div key={n.id} className="px-4 py-3 border-b border-zinc-50 hover:bg-zinc-50 transition-colors">
-                          <div className="flex items-start space-x-3">
+                          <div className="flex items-start space-x-3 relative group">
                             <div className="w-7 h-7 border border-zinc-200 flex items-center justify-center flex-shrink-0 mt-0.5">
                               <IconComp className="w-3.5 h-3.5 text-zinc-500" />
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 pr-6">
                               <p className="text-sm font-medium text-zinc-900">{n.title}</p>
                               <p className="text-xs text-zinc-500 mt-0.5">{n.message}</p>
                               <p className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1">{n.time}</p>
                             </div>
+                            <button onClick={() => markAsRead(n.id)} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-zinc-900 transition-all">
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                       );
@@ -248,7 +272,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
           </div>
           <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-zinc-200 bg-zinc-50 flex items-center justify-center">
             {session?.user?.image ? (
-              <img src={session.user.image} alt={userName} className="w-full h-full object-cover" />
+              <Image src={session.user.image} alt={userName} fill className="object-cover" />
             ) : (
               <span className="text-xs font-bold font-editorial text-zinc-900">{initials}</span>
             )}

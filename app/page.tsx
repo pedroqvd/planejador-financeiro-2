@@ -4,13 +4,12 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { DashboardOverview } from '@/components/DashboardOverview';
 import { Charts } from '@/components/Charts';
 import { Transactions } from '@/components/Transactions';
-import { AIAdvisor } from '@/components/AIAdvisor';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { ImportModal } from '@/components/ImportModal';
 import { useSession } from 'next-auth/react';
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
-import { Plus, Upload } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Plus, Upload, Sparkles, X } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -40,22 +39,97 @@ export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-
-  const loadData = useCallback(async () => {
-    const [dashRes, transRes] = await Promise.all([
-      fetch('/api/dashboard'),
-      fetch('/api/transactions'),
-    ]);
-    if (dashRes.ok) setDashboard(await dashRes.json());
-    if (transRes.ok) {
-      const transData = await transRes.json();
-      setTransactions(Array.isArray(transData) ? transData : transData.transactions || []);
-    }
-  }, []);
+  const [coachInsight, setCoachInsight] = useState<{ title: string; message: string; type: string; } | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let mounted = true;
+
+    async function fetchData() {
+      try {
+        const [dashRes, transRes] = await Promise.all([
+          fetch('/api/dashboard'),
+          fetch('/api/transactions'),
+        ]);
+
+        let dashData = null;
+        let transData = [];
+
+        if (dashRes.ok) dashData = await dashRes.json();
+        if (transRes.ok) {
+          const res = await transRes.json();
+          transData = Array.isArray(res) ? res : res.transactions || [];
+        }
+
+        if (mounted) {
+          setDashboard(dashData);
+          setTransactions(transData);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      }
+    }
+
+    fetchData();
+
+    // AI Coach Background Trigger
+    // Check if we need to call the AI Coach (Debounce of 36 hours)
+    const lastCoachCall = localStorage.getItem('wealthcash_last_coach');
+    const now = Date.now();
+    const thirtySixHours = 36 * 60 * 60 * 1000;
+
+    if (!lastCoachCall || now - parseInt(lastCoachCall) > thirtySixHours) {
+      if (session?.user?.plan === 'pro' || session?.user?.plan === 'premium') {
+        const triggerCoach = async () => {
+          try {
+            const aiRes = await fetch('/api/ai/coach');
+            if (aiRes.ok) {
+              const insight = await aiRes.json();
+
+              if (insight && insight.title && insight.message) {
+                // Show floating Toast
+                setCoachInsight(insight);
+                localStorage.setItem('wealthcash_last_coach', now.toString());
+
+                // Persist to notifications tray
+                await fetch('/api/notifications/ai', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(insight)
+                });
+
+                // Auto dismiss toast after 8 seconds
+                setTimeout(() => setCoachInsight(null), 8000);
+              }
+            }
+          } catch (e) {
+            console.error('Coach silent trigger failed:', e);
+          }
+        };
+
+        // Delay execution to not block main TTI render
+        const coachTimeout = setTimeout(triggerCoach, 3000);
+        return () => { clearTimeout(coachTimeout); mounted = false; };
+      }
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [session?.user?.plan]);
+
+  const refreshData = () => {
+    // Allows manual refresh from modals without triggering effect deps
+    Promise.all([
+      fetch('/api/dashboard'),
+      fetch('/api/transactions'),
+    ]).then(async ([dashRes, transRes]) => {
+      if (dashRes.ok) setDashboard(await dashRes.json());
+      if (transRes.ok) {
+        const res = await transRes.json();
+        setTransactions(Array.isArray(res) ? res : res.transactions || []);
+      }
+    });
+  };
 
   return (
     <DashboardLayout>
@@ -94,30 +168,58 @@ export default function Home() {
 
         <DashboardOverview stats={dashboard?.stats || null} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Charts data={dashboard?.chartData || []} loading={!dashboard} />
-            <Transactions data={transactions} />
-          </div>
-          <div className="space-y-6">
-            <AIAdvisor />
-          </div>
+        <div className="space-y-6">
+          <Charts data={dashboard?.chartData || []} loading={!dashboard} />
+          <Transactions data={transactions} />
         </div>
       </div>
 
       {showAddModal && (
         <AddTransactionModal
           onClose={() => setShowAddModal(false)}
-          onSuccess={() => { setShowAddModal(false); loadData(); }}
+          onSuccess={() => { setShowAddModal(false); refreshData(); }}
         />
       )}
 
       {showImportModal && (
         <ImportModal
           onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); loadData(); }}
+          onSuccess={() => { setShowImportModal(false); refreshData(); }}
         />
       )}
+
+      {/* AI Coach Toast Notification */}
+      <AnimatePresence>
+        {coachInsight && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '50%' }}
+            animate={{ opacity: 1, y: 0, x: '0%' }}
+            exit={{ opacity: 0, scale: 0.9, x: '10%' }}
+            className="fixed bottom-24 right-6 w-80 bg-zinc-900 border border-zinc-800 text-white shadow-2xl z-50 overflow-hidden"
+          >
+            <div className={`h-1 w-full absolute top-0 left-0 bg-${coachInsight.type === 'warning' ? 'rose' : coachInsight.type === 'success' ? 'emerald' : 'sky'}-500`} />
+            <div className="p-5">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                  </div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-100">{coachInsight.title}</h4>
+                </div>
+                <button onClick={() => setCoachInsight(null)} className="text-zinc-500 hover:text-white transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-sm text-zinc-300 leading-relaxed mt-3">
+                {coachInsight.message}
+              </p>
+            </div>
+            <div className="px-5 py-3 bg-white/5 border-t border-white/5">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Coach Ativo</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }

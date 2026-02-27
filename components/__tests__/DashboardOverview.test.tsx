@@ -3,17 +3,28 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 // Mock motion/react to avoid animation issues in tests
-vi.mock('motion/react', () => ({
-    motion: {
-        div: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLDivElement>) => (
-            React.createElement('div', { ...filterMotionProps(props), ref }, children)
-        )),
-        p: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLParagraphElement>) => (
-            React.createElement('p', { ...filterMotionProps(props), ref }, children)
-        )),
-    },
-    AnimatePresence: ({ children }: React.PropsWithChildren) => React.createElement(React.Fragment, null, children),
-}));
+vi.mock('motion/react', () => {
+    const MockDiv = React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLDivElement>) => (
+        React.createElement('div', { ...filterMotionProps(props), ref }, children)
+    ));
+    MockDiv.displayName = 'motion.div';
+
+    const MockP = React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLParagraphElement>) => (
+        React.createElement('p', { ...filterMotionProps(props), ref }, children)
+    ));
+    MockP.displayName = 'motion.p';
+
+    const MockPresence = ({ children }: React.PropsWithChildren) => React.createElement(React.Fragment, null, children);
+    MockPresence.displayName = 'AnimatePresence';
+
+    return {
+        motion: {
+            div: MockDiv,
+            p: MockP,
+        },
+        AnimatePresence: MockPresence,
+    };
+});
 
 function filterMotionProps(props: Record<string, unknown>) {
     const filtered = { ...props };

@@ -2,6 +2,7 @@
 
 import { Sidebar, MobileSidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
+import { AIAdvisor } from '@/components/AIAdvisor';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -30,6 +31,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </main>
       </div>
+      <AIAdvisor />
     </div>
   );
 }

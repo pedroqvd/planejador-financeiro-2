@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 export default function GlobalError({
     error,
     reset,
@@ -69,7 +71,7 @@ export default function GlobalError({
                         >
                             🔄 Recarregar
                         </button>
-                        <a
+                        <Link
                             href="/"
                             style={{
                                 padding: '12px 24px',
@@ -84,7 +86,7 @@ export default function GlobalError({
                             }}
                         >
                             🏠 Dashboard
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </body>

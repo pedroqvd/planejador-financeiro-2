@@ -19,9 +19,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const saved = localStorage.getItem('wealthcash-theme') as Theme;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const initial = saved || (prefersDark ? 'dark' : 'light');
-        setTheme(initial);
+        if (theme !== initial) {
+            setTheme(initial);
+        }
         document.documentElement.classList.toggle('dark', initial === 'dark');
         setMounted(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const toggleTheme = () => {

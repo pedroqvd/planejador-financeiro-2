@@ -17,7 +17,8 @@ export const PLANS = {
         transactionsPerMonth: 50,
         maxGoals: 3,
         maxBudgets: 1,
-        features: ['Dashboard completo', '50 transações/mês', '3 metas', '1 orçamento'],
+        maxAiInteractions: 5,
+        features: ['Dashboard completo', '50 transações/mês', '3 metas', '1 orçamento', '5 consultas IA/dia'],
     },
     pro: {
         name: 'Pro',
@@ -26,7 +27,8 @@ export const PLANS = {
         transactionsPerMonth: Infinity,
         maxGoals: Infinity,
         maxBudgets: Infinity,
-        features: ['Tudo ilimitado', 'IA Advisor', 'Import OFX/CSV', 'Relatórios PDF', 'Suporte email'],
+        maxAiInteractions: 50,
+        features: ['Tudo ilimitado', '50 consultas IA/dia', 'Import OFX/CSV', 'Relatórios PDF', 'Suporte email'],
     },
     premium: {
         name: 'Premium',
@@ -35,7 +37,8 @@ export const PLANS = {
         transactionsPerMonth: Infinity,
         maxGoals: Infinity,
         maxBudgets: Infinity,
-        features: ['Tudo do Pro', 'Conexão bancária', 'Alertas inteligentes', 'API access', 'Suporte prioritário'],
+        maxAiInteractions: Infinity,
+        features: ['Tudo do Pro', 'IA Ilimitada', 'Alertas inteligentes', 'API access', 'Suporte prioritário'],
     },
 } as const;
 

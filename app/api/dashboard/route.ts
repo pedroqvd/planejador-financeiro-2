@@ -40,33 +40,47 @@ export async function GET() {
     const investments = goalsResult._sum.current || 0;
     const netWorth = income - expenses + investments;
 
-    // Get monthly trend data (last 6 months) — parallel queries
-    const monthPromises = [];
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
-        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    // Get monthly trend data (last 6 months) — optimized single query instead of N+1 loop
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const recentTransactions = await prisma.transaction.groupBy({
+        by: ['type'],
+        where: { userId, date: { gte: sixMonthsAgo } },
+        _sum: { amount: true },
+        // Prisma's groupBy doesn't natively support grouping by extracted month from Date directly in standard client
+        // So we will fetch the raw data and aggregate in memory for the small dataset of 6 months
+    });
 
-        monthPromises.push(
-            Promise.all([
-                prisma.transaction.aggregate({
-                    where: { userId, type: 'income', date: { gte: monthStart, lte: monthEnd } },
-                    _sum: { amount: true },
-                }),
-                prisma.transaction.aggregate({
-                    where: { userId, type: 'expense', date: { gte: monthStart, lte: monthEnd } },
-                    _sum: { amount: true },
-                }),
-            ]).then(([inc, exp]) => ({
-                name: monthNames[d.getMonth()],
-                receitas: inc._sum.amount || 0,
-                despesas: exp._sum.amount || 0,
-            }))
-        );
-    }
+    const allRecentTx = await prisma.transaction.findMany({
+        where: { userId, date: { gte: sixMonthsAgo } },
+        select: { amount: true, type: true, date: true }
+    });
 
-    const months = await Promise.all(monthPromises);
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+    // Initialize array for the last 6 months
+    const monthsData = Array.from({ length: 6 }).map((_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        return {
+            name: monthNames[d.getMonth()],
+            monthKey: `${d.getFullYear()}-${d.getMonth()}`,
+            receitas: 0,
+            despesas: 0
+        };
+    });
+
+    // Aggregate in memory (O(N) operation, much faster than 12 isolated DB queries)
+    allRecentTx.forEach(tx => {
+        const txDate = new Date(tx.date);
+        const key = `${txDate.getFullYear()}-${txDate.getMonth()}`;
+        const monthObj = monthsData.find(m => m.monthKey === key);
+        if (monthObj) {
+            if (tx.type === 'income') monthObj.receitas += tx.amount;
+            if (tx.type === 'expense') monthObj.despesas += tx.amount;
+        }
+    });
+
+    // Clean up temporary keys before sending to chart
+    const months = monthsData.map(({ name, receitas, despesas }) => ({ name, receitas, despesas }));
 
     // Get budgets
     const budgets = await prisma.budget.findMany({

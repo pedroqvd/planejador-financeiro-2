@@ -19,8 +19,8 @@ export function ImportModal({
 
     const handleFile = (f: File) => {
         const name = f.name.toLowerCase();
-        if (!name.endsWith('.ofx') && !name.endsWith('.qfx') && !name.endsWith('.csv')) {
-            setError('Formato não suportado. Use .ofx, .qfx ou .csv');
+        if (!name.endsWith('.ofx') && !name.endsWith('.qfx') && !name.endsWith('.csv') && !name.endsWith('.pdf')) {
+            setError('Formato não suportado. Use .pdf, .ofx ou .csv');
             return;
         }
         if (f.size > 5 * 1024 * 1024) {
@@ -95,7 +95,7 @@ export function ImportModal({
                             <input
                                 ref={inputRef}
                                 type="file"
-                                accept=".ofx,.qfx,.csv"
+                                accept=".pdf,.ofx,.qfx,.csv"
                                 className="hidden"
                                 onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
                             />
@@ -111,15 +111,15 @@ export function ImportModal({
                                 <>
                                     <Upload className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
                                     <p className="text-sm text-zinc-600 font-medium">Arraste ou clique para selecionar</p>
-                                    <p className="text-xs text-zinc-400 mt-1 uppercase tracking-wider">Formatos: .ofx, .qfx, .csv (máx 5MB)</p>
+                                    <p className="text-xs text-zinc-400 mt-1 uppercase tracking-wider">Formatos: .pdf, .ofx, .csv (máx 5MB)</p>
                                 </>
                             )}
                         </div>
 
                         {/* Info */}
                         <div className="bg-zinc-50 border border-zinc-200 p-3 text-xs text-zinc-600">
-                            <p className="font-semibold mb-1">Como exportar do seu banco:</p>
-                            <p>Acesse o Internet Banking → Extrato → Exportar em OFX ou CSV</p>
+                            <p className="font-semibold mb-1">Dica de Importação com IA Mágica ✨</p>
+                            <p>Envie a sua fatura em PDF do Nubank, Itaú ou Inter. A IA vai ler, categorizar e importar tudo sozinha em segundos.</p>
                         </div>
 
                         {error && (

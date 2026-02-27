@@ -14,6 +14,8 @@ model User {
   password             String
   image                String?
   plan                 String        @default("free") // free, pro, premium
+  aiInteractionsCount  Int           @default(0)
+  aiLastInteractionAt  DateTime      @default(now())
   stripeCustomerId     String?       @unique
   stripeSubscriptionId String?
   createdAt            DateTime      @default(now())
@@ -22,6 +24,8 @@ model User {
   budgets              Budget[]
   goals                Goal[]
   passwordResets       PasswordReset[]
+  notifications        Notification[]
+  investments          Investment[]
 
   @@index([email])
 }
@@ -79,4 +83,33 @@ model PasswordReset {
 
   @@index([token])
   @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  type      String   @default("info") // info, warning, success
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, read])
+}
+
+model Investment {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // renda_fixa, acoes, cripto, fundos
+  amount    Float
+  yield     Float    @default(0) // rentabilidade
+  date      DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, type])
 }

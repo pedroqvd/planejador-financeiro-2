@@ -24,7 +24,7 @@ const navItems = [
   { name: 'Orçamento', href: '/budget', icon: Wallet },
   { name: 'Investimentos', href: '/investments', icon: PieChart },
   { name: 'Objetivos', href: '/goals', icon: Target },
-  { name: 'IA Advisor', href: '/ai', icon: Sparkles },
+  { name: 'Plano Pro ✨', href: '/upgrade', icon: Sparkles },
 ];
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {

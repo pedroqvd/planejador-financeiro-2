@@ -1,10 +1,11 @@
 'use client';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { Plus, Plane, Shield, Car, Target } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Plus, Plane, Shield, Car, Target, CheckCircle2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
+import confetti from 'canvas-confetti';
 
 type Goal = {
   id: string;
@@ -96,6 +97,30 @@ export default function GoalsPage() {
 
   useEffect(() => { loadGoals(); }, [loadGoals]);
 
+  const getMotivationalText = (pct: number) => {
+    if (pct >= 100) return 'Objetivo alcançado! Parabéns pela conquista! 🎉';
+    if (pct >= 80) return 'Reta final! Falta muito pouco para conquistar.';
+    if (pct >= 50) return 'Passou da metade! Mantendo o foco.';
+    if (pct >= 25) return 'Base sólida formada. Continue!';
+    return 'O começo é a parte mais importante.';
+  };
+
+  const handleCelebrate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const duration = 2000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function () {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) return clearInterval(interval);
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+    }, 250);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -178,6 +203,20 @@ export default function GoalsPage() {
                     />
                   </div>
                   <p className="text-[10px] text-zinc-500 text-right uppercase tracking-wider">{percentage.toFixed(1)}% concluído</p>
+
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-100">
+                    <p className="text-xs text-zinc-600 font-medium">
+                      {getMotivationalText(percentage)}
+                    </p>
+                    {percentage >= 100 && (
+                      <button
+                        onClick={handleCelebrate}
+                        className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 hover:bg-emerald-100 transition-colors flex items-center gap-1 border border-emerald-200"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Celebrar
+                      </button>
+                    )}
+                  </div>
                 </motion.div>
               );
             })}

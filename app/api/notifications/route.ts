@@ -8,84 +8,107 @@ export async function GET() {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    // Generate smart notifications based on user data
-    const now = new Date();
-    const currentMonth = now.toISOString().slice(0, 7);
-    const notifications: { id: string; title: string; message: string; type: string; time: string }[] = [];
-
     try {
-        // Check budgets for overspending
-        const budgets = await prisma.budget.findMany({
-            where: { userId: session.user.id, month: currentMonth },
+        const userId = session.user.id;
+
+        // 1. Generate smart notifications dynamically if we haven't generated them today
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const existingToday = await (prisma as any).notification.findFirst({
+            where: { userId, createdAt: { gte: startOfDay } }
         });
 
-        for (const b of budgets) {
-            const pct = b.limit > 0 ? (b.spent / b.limit) * 100 : 0;
-            if (pct >= 100) {
-                notifications.push({
-                    id: `budget-over-${b.category}`,
-                    title: 'Orçamento estourado',
-                    message: `Você ultrapassou o limite de ${b.category} em R$ ${(b.spent - b.limit).toFixed(2)}`,
-                    type: 'warning',
-                    time: 'Agora',
-                });
-            } else if (pct >= 80) {
-                notifications.push({
-                    id: `budget-warn-${b.category}`,
-                    title: 'Orçamento quase no limite',
-                    message: `${b.category}: ${pct.toFixed(0)}% do limite utilizado`,
-                    type: 'info',
-                    time: 'Agora',
-                });
+        if (!existingToday) {
+            const now = new Date();
+            const currentMonth = now.toISOString().slice(0, 7);
+
+            // Generate Budget alerts
+            const budgets = await prisma.budget.findMany({ where: { userId, month: currentMonth } });
+            for (const b of budgets) {
+                const pct = b.limit > 0 ? (b.spent / b.limit) * 100 : 0;
+                if (pct >= 100) {
+                    await (prisma as any).notification.create({
+                        data: {
+                            userId, title: 'Orçamento estourado', message: `Você ultrapassou o limite de ${b.category}.`, type: 'warning'
+                        }
+                    });
+                } else if (pct >= 80) {
+                    await (prisma as any).notification.create({
+                        data: {
+                            userId, title: 'Orçamento no limite', message: `${b.category}: ${pct.toFixed(0)}% utilizado.`, type: 'info'
+                        }
+                    });
+                }
+            }
+
+            // Generate Goals alerts
+            const goals = await prisma.goal.findMany({ where: { userId } });
+            for (const g of goals) {
+                const pct = g.target > 0 ? (g.current / g.target) * 100 : 0;
+                if (pct >= 100) {
+                    await (prisma as any).notification.create({
+                        data: {
+                            userId, title: 'Meta atingida! 🎉', message: `Você completou a meta "${g.name}"!`, type: 'success'
+                        }
+                    });
+                } else if (pct >= 75) {
+                    await (prisma as any).notification.create({
+                        data: {
+                            userId, title: 'Meta quase lá', message: `"${g.name}": ${pct.toFixed(0)}% concluída.`, type: 'info'
+                        }
+                    });
+                }
             }
         }
 
-        // Check recent transactions
-        const recentCount = await prisma.transaction.count({
-            where: {
-                userId: session.user.id,
-                date: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7) },
-            },
+        // 2. Fetch all unread notifications
+        const notifications = await (prisma as any).notification.findMany({
+            where: { userId, read: false },
+            orderBy: { createdAt: 'desc' },
+            take: 10
         });
 
-        if (recentCount === 0) {
-            notifications.push({
-                id: 'no-recent',
-                title: 'Sem registros recentes',
-                message: 'Você não registrou transações nos últimos 7 dias.',
-                type: 'info',
-                time: 'Hoje',
+        // Map them to the UI format
+        const formatted = notifications.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            time: new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(n.createdAt)
+        }));
+
+        return NextResponse.json({ notifications: formatted });
+    } catch (error) {
+        console.error('Notifications error:', error);
+        return NextResponse.json({ notifications: [] });
+    }
+}
+
+export async function POST(request: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    try {
+        const { id } = await request.json();
+
+        if (id === 'all') {
+            await (prisma as any).notification.updateMany({
+                where: { userId: session.user.id, read: false },
+                data: { read: true }
+            });
+        } else if (id) {
+            await (prisma as any).notification.update({
+                where: { id, userId: session.user.id },
+                data: { read: true }
             });
         }
 
-        // Goals progress
-        const goals = await prisma.goal.findMany({
-            where: { userId: session.user.id },
-        });
-
-        for (const g of goals) {
-            const pct = g.target > 0 ? (g.current / g.target) * 100 : 0;
-            if (pct >= 100) {
-                notifications.push({
-                    id: `goal-done-${g.id}`,
-                    title: 'Meta atingida! 🎉',
-                    message: `Você completou a meta "${g.name}"!`,
-                    type: 'success',
-                    time: 'Recente',
-                });
-            } else if (pct >= 75) {
-                notifications.push({
-                    id: `goal-close-${g.id}`,
-                    title: 'Meta quase lá',
-                    message: `"${g.name}": ${pct.toFixed(0)}% concluída`,
-                    type: 'info',
-                    time: 'Recente',
-                });
-            }
-        }
+        return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Notifications error:', error);
+        console.error('Notification read error:', error);
+        return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
     }
-
-    return NextResponse.json({ notifications });
 }

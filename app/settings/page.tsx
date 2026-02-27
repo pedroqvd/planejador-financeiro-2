@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'motion/react';
 import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera } from 'lucide-react';
+import Image from 'next/image';
 
 function SettingsSkeleton() {
     return (
@@ -266,7 +267,7 @@ export default function SettingsPage() {
                     <div className="flex items-center space-x-4 mb-6">
                         <div className="w-14 h-14 border border-zinc-200 flex items-center justify-center bg-zinc-50 relative overflow-hidden group/avatar">
                             {photo ? (
-                                <img src={photo} alt={name} className="w-full h-full object-cover" />
+                                <Image src={photo} alt={name || 'Avatar'} fill className="object-cover" />
                             ) : (
                                 <User className="w-6 h-6 text-zinc-600" />
                             )}
