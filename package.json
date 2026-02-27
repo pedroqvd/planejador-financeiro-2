@@ -14,6 +14,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.1",
     "@prisma/client": "^5.22.0",
@@ -27,6 +28,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "firebase": "^12.9.0",
+    "firebase-admin": "^13.7.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.553.0",
@@ -37,6 +40,7 @@
     "prisma": "^5.22.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
     "recharts": "^3.7.0",
     "stripe": "^20.4.0",

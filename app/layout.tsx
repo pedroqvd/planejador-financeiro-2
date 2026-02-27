@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
@@ -13,6 +13,14 @@ const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-serif',
 });
+
+export const viewport: Viewport = {
+  themeColor: '#0A0A0A',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Prevents zooming on input focus in iOS
+};
 
 export const metadata: Metadata = {
   title: {

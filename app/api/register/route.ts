@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { authRatelimit, getClientIp } from '@/lib/rate-limit';
+import crypto from 'crypto';
 
 function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
         const name = sanitize(String(body.name || '')).slice(0, 100);
         const email = String(body.email || '').trim().toLowerCase().slice(0, 254);
         const password = String(body.password || '');
+        const referredByCode = body.referredByCode ? String(body.referredByCode).trim().toUpperCase() : null;
 
         // Validation
         if (!name || !email || !password) {
@@ -82,12 +84,40 @@ export async function POST(request: Request) {
             );
         }
 
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-            },
+        // Handle Referral logic
+        let referrerId: string | null = null;
+        if (referredByCode) {
+            const referrer = await prisma.user.findUnique({
+                where: { referralCode: referredByCode },
+                select: { id: true }
+            });
+            if (referrer) {
+                referrerId = referrer.id;
+            }
+        }
+
+        const newReferralCode = `WEALTH-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
+        // Create user and increment referrer inside a transaction
+        const user = await prisma.$transaction(async (tx) => {
+            const newUser = await tx.user.create({
+                data: {
+                    name,
+                    email,
+                    password: hashedPassword,
+                    referralCode: newReferralCode,
+                    referredBy: referrerId,
+                },
+            });
+
+            if (referrerId) {
+                await tx.user.update({
+                    where: { id: referrerId },
+                    data: { referralsCount: { increment: 1 } }
+                });
+            }
+
+            return newUser;
         });
 
         // Seed initial budget categories for the new user

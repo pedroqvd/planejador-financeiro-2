@@ -18,6 +18,10 @@ model User {
   aiLastInteractionAt  DateTime      @default(now())
   stripeCustomerId     String?       @unique
   stripeSubscriptionId String?
+  fcmToken             String?
+  referralCode         String        @unique @default(cuid())
+  referredBy           String?
+  referralsCount       Int           @default(0)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   transactions         Transaction[]

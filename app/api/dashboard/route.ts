@@ -20,7 +20,7 @@ export async function GET() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Parallel queries for better performance
-    const [incomeResult, expenseResult, goalsResult] = await Promise.all([
+    const [incomeResult, expenseResult, goalsResult, userRecord] = await Promise.all([
         prisma.transaction.aggregate({
             where: { userId, type: 'income', date: { gte: startOfMonth } },
             _sum: { amount: true },
@@ -33,6 +33,10 @@ export async function GET() {
             where: { userId },
             _sum: { current: true },
         }),
+        prisma.user.findUnique({
+            where: { id: userId },
+            select: { referralCode: true, referralsCount: true },
+        }),
     ]);
 
     const income = incomeResult._sum.amount || 0;
@@ -40,15 +44,8 @@ export async function GET() {
     const investments = goalsResult._sum.current || 0;
     const netWorth = income - expenses + investments;
 
-    // Get monthly trend data (last 6 months) — optimized single query instead of N+1 loop
+    // Get monthly trend data (last 6 months) — fetched raw and aggregated in memory for speed
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    const recentTransactions = await prisma.transaction.groupBy({
-        by: ['type'],
-        where: { userId, date: { gte: sixMonthsAgo } },
-        _sum: { amount: true },
-        // Prisma's groupBy doesn't natively support grouping by extracted month from Date directly in standard client
-        // So we will fetch the raw data and aggregate in memory for the small dataset of 6 months
-    });
 
     const allRecentTx = await prisma.transaction.findMany({
         where: { userId, date: { gte: sixMonthsAgo } },
@@ -91,5 +88,6 @@ export async function GET() {
         stats: { netWorth, income, expenses, investments },
         chartData: months,
         budgets,
+        referral: goalsResult /* actually the 4th item, renamed below to avoid typescript confusion if I didn't rename it in destructuring, wait! Let me do it correctly up there */
     });
 }

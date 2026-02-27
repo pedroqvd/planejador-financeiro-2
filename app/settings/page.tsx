@@ -4,8 +4,10 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'motion/react';
-import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera } from 'lucide-react';
+import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera, Bell, Moon, Sun, Download, Trash2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
+import { PushNotificationManager } from '@/components/PushNotificationManager'; // <-- NEW
+import { useTheme } from '@/components/ThemeProvider';
 
 function SettingsSkeleton() {
     return (
@@ -85,6 +87,10 @@ export default function SettingsPage() {
     const [profileLoading, setProfileLoading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [planLoading, setPlanLoading] = useState('');
+    const [downloadLoading, setDownloadLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
         if (session?.user?.image) setPhoto(session.user.image);
@@ -159,6 +165,47 @@ export default function SettingsPage() {
             }
         } catch { setPasswordError('Erro de conexão.'); }
         finally { setPasswordLoading(false); }
+    };
+
+    const handleDownloadData = async () => {
+        setDownloadLoading(true);
+        try {
+            const res = await fetch('/api/settings/export');
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `wealthcash-export-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('Erro ao exportar dados.');
+            }
+        } catch {
+            alert('Erro de conexão ao exportar.');
+        } finally {
+            setDownloadLoading(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        setDeleteLoading(true);
+        try {
+            const res = await fetch('/api/settings/account', { method: 'DELETE' });
+            if (res.ok) {
+                // Redirect or signout
+                window.location.href = '/api/auth/signout';
+            } else {
+                alert('Erro ao excluir conta.');
+                setDeleteLoading(false);
+            }
+        } catch {
+            alert('Erro de conexão.');
+            setDeleteLoading(false);
+        }
     };
 
 
@@ -393,6 +440,136 @@ export default function SettingsPage() {
                             <span>Alterar Senha</span>
                         </button>
                     </div>
+                </motion.div>
+
+                {/* Notifications */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-white border border-zinc-200 p-6"
+                >
+                    <div className="flex items-center space-x-3 mb-5">
+                        <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center">
+                            <Bell className="w-5 h-5 text-zinc-600" />
+                        </div>
+                        <div>
+                            <h2 className="font-editorial font-semibold text-zinc-900">Notificações Nativas</h2>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Configure alertas do AI Coach</p>
+                        </div>
+                    </div>
+
+                    <PushNotificationManager />
+                </motion.div>
+
+                {/* Preferences & Data */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-white border border-zinc-200 p-6"
+                >
+                    <div className="flex items-center space-x-3 mb-5">
+                        <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center">
+                            <Moon className="w-5 h-5 text-zinc-600" />
+                        </div>
+                        <div>
+                            <h2 className="font-editorial font-semibold text-zinc-900">Preferências e Dados</h2>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Acessibilidade e Open Finance</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-medium text-zinc-900">Modo Escuro / Claro</h3>
+                                <p className="text-xs text-zinc-500 mt-1">Altere a aparência do aplicativo</p>
+                            </div>
+                            <button
+                                onClick={toggleTheme}
+                                className="flex items-center justify-center w-10 h-10 border border-zinc-200 hover:bg-zinc-50 transition-colors"
+                            >
+                                {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                            </button>
+                        </div>
+
+                        <div className="h-px bg-zinc-100" />
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-medium text-zinc-900">Exportar Meus Dados</h3>
+                                <p className="text-xs text-zinc-500 mt-1">Baixe um arquivo JSON com todo o seu histórico</p>
+                            </div>
+                            <button
+                                onClick={handleDownloadData}
+                                disabled={downloadLoading}
+                                className="px-4 py-2 border border-zinc-200 text-xs font-medium uppercase tracking-wider hover:bg-zinc-50 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                            >
+                                {downloadLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                                <span>Exportar</span>
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Danger Zone */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-red-50 border border-red-100 p-6"
+                >
+                    <div className="flex items-center space-x-3 mb-5">
+                        <div className="w-10 h-10 border border-red-200 flex items-center justify-center bg-white">
+                            <Trash2 className="w-5 h-5 text-red-600" />
+                        </div>
+                        <div>
+                            <h2 className="font-editorial font-semibold text-red-900">Zona de Perigo</h2>
+                            <p className="text-[10px] text-red-700 uppercase tracking-wider">Ações irreversíveis</p>
+                        </div>
+                    </div>
+
+                    {!showDeleteConfirm ? (
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-sm font-medium text-red-900">Excluir Conta</h3>
+                                <p className="text-xs text-red-700 mt-1">Apaga permanentemente todos os seus dados e histórico</p>
+                            </div>
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="px-4 py-2 bg-white border border-red-200 text-red-600 text-xs font-medium uppercase tracking-wider hover:bg-red-50 transition-colors"
+                            >
+                                Excluir
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="bg-white p-4 border border-red-200">
+                            <div className="flex items-start space-x-3">
+                                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-red-900">Tem certeza absoluta?</h3>
+                                    <p className="text-xs text-red-700 mt-1 mb-4">Esta ação não pode ser desfeita. Todos os seus orçamentos, transações e metas serão apagados para sempre.</p>
+                                    <div className="flex items-center space-x-3">
+                                        <button
+                                            onClick={handleDeleteAccount}
+                                            disabled={deleteLoading}
+                                            className="px-4 py-2 bg-red-600 text-white text-xs font-medium uppercase tracking-wider hover:bg-red-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                                        >
+                                            {deleteLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                            <span>Sim, excluir para sempre</span>
+                                        </button>
+                                        <button
+                                            onClick={() => setShowDeleteConfirm(false)}
+                                            disabled={deleteLoading}
+                                            className="px-4 py-2 border border-zinc-200 text-zinc-600 text-xs font-medium uppercase tracking-wider hover:bg-zinc-50 transition-colors"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
             </div>
         </DashboardLayout>

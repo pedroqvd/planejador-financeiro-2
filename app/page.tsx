@@ -6,6 +6,7 @@ import { Charts } from '@/components/Charts';
 import { Transactions } from '@/components/Transactions';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { ImportModal } from '@/components/ImportModal';
+import { ReferralCard } from '@/components/ReferralCard';
 import { useSession } from 'next-auth/react';
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -21,6 +22,7 @@ function getGreeting() {
 type DashboardData = {
   stats: { netWorth: number; income: number; expenses: number; investments: number };
   chartData: { name: string; receitas: number; despesas: number }[];
+  referral?: { referralCode: string; referralsCount: number };
 };
 
 type Transaction = {
@@ -167,6 +169,10 @@ export default function Home() {
         </motion.div>
 
         <DashboardOverview stats={dashboard?.stats || null} />
+
+        {dashboard?.referral && (
+          <ReferralCard code={dashboard.referral.referralCode} count={dashboard.referral.referralsCount} />
+        )}
 
         <div className="space-y-6">
           <Charts data={dashboard?.chartData || []} loading={!dashboard} />

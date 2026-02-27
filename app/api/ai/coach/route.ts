@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { GoogleGenAI } from '@google/genai';
+import { sendPushNotification } from '@/lib/firebase-admin';
 
 let _ai: GoogleGenAI | null = null;
 function getAI() {
@@ -35,7 +36,7 @@ export async function GET() {
         const monthProgress = currentDay / daysInMonth;
 
         // 1. Fetch relevant financial data context for the Coach
-        const [recentTransactions, budgets, goals, incomeAgg, expenseAgg] = await Promise.all([
+        const [recentTransactions, budgets, goals, incomeAgg, expenseAgg, userRecord] = await Promise.all([
             prisma.transaction.findMany({
                 where: { userId, date: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } }, // Last 7 days
                 orderBy: { date: 'desc' },
@@ -58,6 +59,10 @@ export async function GET() {
                 where: { userId, type: 'expense', date: { gte: startOfMonth } },
                 _sum: { amount: true },
             }),
+            prisma.user.findUnique({
+                where: { id: userId },
+                select: { fcmToken: true }
+            })
         ]);
 
         const income = incomeAgg._sum.amount || 0;
@@ -135,6 +140,16 @@ ${context}`;
         } catch (err) {
             console.error('Coach JSON Parse Error:', err);
             return NextResponse.json({ error: 'Falha ao processar análise da IA.' }, { status: 500 });
+        }
+
+        if (insightJson && userRecord?.fcmToken) {
+            // FIREBASE DISPATCH: Acorda a tela bloqueada do celular do usuário
+            await sendPushNotification(
+                userRecord.fcmToken,
+                insightJson.title,
+                insightJson.message,
+                { type: insightJson.type, urgency: insightJson.urgency }
+            );
         }
 
         return NextResponse.json(insightJson);
