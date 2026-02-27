@@ -126,7 +126,7 @@ export default function InvestmentsPage() {
                   <RechartsTooltip
                     contentStyle={{ backgroundColor: '#18181b', border: 'none', borderRadius: '0px', color: '#fff' }}
                     itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}
-                    formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Patrimônio']}
+                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'Patrimônio'] as any}
                   />
                   <Area type="monotone" dataKey="patrimônio" stroke="#18181b" strokeWidth={2} fillOpacity={1} fill="url(#colorPatrimonio)" />
                 </AreaChart>
@@ -156,7 +156,7 @@ export default function InvestmentsPage() {
                   <RechartsTooltip
                     contentStyle={{ backgroundColor: '#18181b', border: 'none', borderRadius: '0px', color: '#fff' }}
                     itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 'bold' }}
-                    formatter={(value: number) => [`${value}%`, 'Alocação']}
+                    formatter={(value: any) => [`${value}%`, 'Alocação'] as any}
                   />
                 </RechartsPie>
               </ResponsiveContainer>

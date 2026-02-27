@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { MercadoPagoConfig, PreApprovalPlan, PreApproval } from 'mercadopago';
 // import { auth } from '@/lib/auth';

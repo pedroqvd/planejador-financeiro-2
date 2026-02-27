@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment, PreApproval } from 'mercadopago';
 // import { prisma } from '@/lib/prisma';
@@ -57,6 +58,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Webhook Handler Failed' }, { status: 500 });
     }
     */
-    
+
     return NextResponse.json({ message: 'Boilerplate Webhook MP' });
 }
