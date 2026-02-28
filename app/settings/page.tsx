@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera, Bell, Moon, Sun, Download, Trash2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { PushNotificationManager } from '@/components/PushNotificationManager'; // <-- NEW
+import { OpenFinanceManager } from '@/components/OpenFinanceManager';
 import { useTheme } from '@/components/ThemeProvider';
 
 function SettingsSkeleton() {
@@ -212,8 +213,23 @@ export default function SettingsPage() {
 
     const handleUpgrade = async (plan: string) => {
         setPlanLoading(plan);
-        alert(`Integração com Mercado Pago (${plan}) em desenvolvimento!`);
-        setTimeout(() => setPlanLoading(''), 1000);
+        try {
+            const res = await fetch('/api/checkout/mercado-pago', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planId: plan })
+            });
+            const data = await res.json();
+            if (res.ok && data.url) {
+                window.location.href = data.url;
+            } else {
+                alert(data.error || 'Erro ao comunicar com Mercado Pago.');
+                setPlanLoading('');
+            }
+        } catch (err) {
+            console.error(err);
+            setPlanLoading('');
+        }
     };
 
     const handlePortal = async () => {
@@ -446,6 +462,16 @@ export default function SettingsPage() {
                     </div>
 
                     <PushNotificationManager />
+                </motion.div>
+
+                {/* Open Finance Manager */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="bg-white border border-zinc-200 p-6"
+                >
+                    <OpenFinanceManager />
                 </motion.div>
 
                 {/* Preferences & Data */}

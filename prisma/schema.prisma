@@ -30,6 +30,7 @@ model User {
   passwordResets       PasswordReset[]
   notifications        Notification[]
   investments          Investment[]
+  pluggyItems          PluggyItem[]
 
   @@index([email])
 }
@@ -40,9 +41,10 @@ model Transaction {
   category String
   amount   Float
   type     String
-  date     DateTime @default(now())
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date                DateTime @default(now())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pluggyTransactionId String?  @unique
 
   @@index([userId])
   @@index([userId, type, date])
@@ -116,4 +118,20 @@ model Investment {
 
   @@index([userId])
   @@index([userId, type])
+}
+
+model PluggyItem {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pluggyItemId    String   @unique // ID of the Item in Pluggy's database
+  connectorId     Int      // ID of the bank/financial institution
+  connectorName   String?  // Name of the bank (e.g., "Nubank", "Itaú")
+  status          String   // WAITING_USER_INPUT, UPDATING, UPDATED, LOGIN_ERROR
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  error           String?  // Detailed error message if status is an error state
+  lastSyncAt      DateTime? // Last time transactions where pulled
+
+  @@index([userId])
 }

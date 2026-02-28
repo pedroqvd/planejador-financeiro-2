@@ -29,32 +29,24 @@ export default function UpgradePage() {
         if (isAlreadyPro) return;
         setLoading(true);
         try {
-            const res = await fetch('/api/upgrade', { method: 'POST' });
-            if (res.ok) {
-                // Trigger rich confetti
-                const duration = 3000;
-                const animationEnd = Date.now() + duration;
-                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            const res = await fetch('/api/checkout/mercado-pago', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planId: 'pro' })
+            });
+            const data = await res.json();
 
-                const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-                const interval: any = setInterval(function () {
-                    const timeLeft = animationEnd - Date.now();
-                    if (timeLeft <= 0) return clearInterval(interval);
-                    const particleCount = 50 * (timeLeft / duration);
-                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-                    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-                }, 250);
-
-                setSuccess(true);
-                // Force session update so UI reflects 'pro' status immediately
-                await update();
-                setTimeout(() => router.push('/'), 3500);
+            if (res.ok && data.url) {
+                // Redireciona o usuário para o checkout seguro do Mercado Pago
+                window.location.href = data.url;
+            } else {
+                alert(data.error || 'Erro ao gerar checkout');
+                setLoading(false);
             }
         } catch (err) {
             console.error(err);
-        } finally {
             setLoading(false);
+            alert('Falha na comunicação com o banco.');
         }
     };
 
@@ -115,10 +107,10 @@ export default function UpgradePage() {
                             onClick={handleUpgrade}
                             disabled={loading || isAlreadyPro || success}
                             className={`w-full py-4 rounded-xl flex items-center justify-center font-bold text-lg transition-all ${success
-                                    ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]'
-                                    : isAlreadyPro
-                                        ? 'bg-zinc-100 text-zinc-500 border border-zinc-200 cursor-not-allowed'
-                                        : 'bg-zinc-900 text-white hover:bg-zinc-800 hover:shadow-xl hover:-translate-y-1'
+                                ? 'bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                                : isAlreadyPro
+                                    ? 'bg-zinc-100 text-zinc-500 border border-zinc-200 cursor-not-allowed'
+                                    : 'bg-zinc-900 text-white hover:bg-zinc-800 hover:shadow-xl hover:-translate-y-1'
                                 }`}
                         >
                             {loading ? (
@@ -135,7 +127,7 @@ export default function UpgradePage() {
                         </button>
                         {!success && !isAlreadyPro && (
                             <p className="text-center text-xs text-zinc-400 mt-4">
-                                *Simulador. Nenhuma cobrança real será feita.
+                                Você será redirecionado para o ambiente seguro do Mercado Pago.
                             </p>
                         )}
                     </div>
