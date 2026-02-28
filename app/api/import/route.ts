@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     } catch { /* dev fallback */ }
 
     try {
-        const formData = await request.formData();
-        const file = formData.get('file') as File | null;
+        const formData = await request.formData() as any;
+        const file = formData.get('file');
 
         if (!file) {
             return NextResponse.json({ error: 'Nenhum arquivo enviado.' }, { status: 400 });

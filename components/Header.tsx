@@ -97,7 +97,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const handleChange = (val: string) => {
     setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => doSearch(val), 300);
+    debounceRef.current = window.setTimeout(() => doSearch(val), 300) as any;
   };
 
   const clearSearch = () => {

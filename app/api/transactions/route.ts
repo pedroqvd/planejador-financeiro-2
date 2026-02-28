@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit, getClientIp } from '@/lib/rate-limit';
-import { getPlanLimits } from '@/lib/stripe';
+import { getPlanLimits } from '@/lib/plans';
 
 const VALID_TYPES = ['income', 'expense'] as const;
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];

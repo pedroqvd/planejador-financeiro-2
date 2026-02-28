@@ -212,28 +212,14 @@ export default function SettingsPage() {
 
     const handleUpgrade = async (plan: string) => {
         setPlanLoading(plan);
-        try {
-            const res = await fetch('/api/stripe/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan }),
-            });
-            const data = await res.json();
-            if (res.ok && data.url) {
-                window.location.href = data.url;
-            }
-        } catch { /* ignore */ }
-        finally { setPlanLoading(''); }
+        alert(`Integração com Mercado Pago (${plan}) em desenvolvimento!`);
+        setTimeout(() => setPlanLoading(''), 1000);
     };
 
     const handlePortal = async () => {
         setPlanLoading('portal');
-        try {
-            const res = await fetch('/api/stripe/portal', { method: 'POST' });
-            const data = await res.json();
-            if (res.ok && data.url) window.location.href = data.url;
-        } catch { /* ignore */ }
-        finally { setPlanLoading(''); }
+        alert('Portal do Mercado Pago em desenvolvimento!');
+        setTimeout(() => setPlanLoading(''), 1000);
     };
 
     const userPlan = (session?.user as { plan?: string })?.plan || 'free';

@@ -29,12 +29,10 @@ vi.mock('@/lib/rate-limit', () => ({
     getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
-// Mock stripe
-vi.mock('@/lib/stripe', () => ({
-    getPlanLimits: vi.fn().mockReturnValue({
-        transactionsPerMonth: Infinity,
-        aiEnabled: true,
-    }),
+// Mock plans
+vi.mock('@/lib/plans', () => ({
+    getPlanLimits: vi.fn(),
+    checkMonthlyLimit: vi.fn(),
 }));
 
 import { auth } from '@/lib/auth';

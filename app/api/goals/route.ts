@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit } from '@/lib/rate-limit';
-import { getPlanLimits } from '@/lib/stripe';
+import { getPlanLimits } from '@/lib/plans';
 
 const MAX_AMOUNT = 99_999_999;
 const VALID_ICONS = ['Target', 'Plane', 'Home', 'GraduationCap', 'Car', 'Heart', 'Shield', 'Gift', 'Wallet', 'PiggyBank', 'Gem'];
@@ -49,9 +49,9 @@ export async function POST(request: Request) {
 
         const goalCount = await prisma.goal.count({ where: { userId: session.user.id } });
 
-        if (planLimits.maxGoals !== Infinity && goalCount >= planLimits.maxGoals) {
+        if (planLimits.goalsCount !== Infinity && goalCount >= planLimits.goalsCount) {
             return NextResponse.json(
-                { error: `Limite de ${planLimits.maxGoals} meta(s) no plano Free. Faça upgrade para o Pro!` },
+                { error: `Limite de ${planLimits.goalsCount} meta(s) no plano Free. Faça upgrade para o Pro!` },
                 { status: 403 }
             );
         }

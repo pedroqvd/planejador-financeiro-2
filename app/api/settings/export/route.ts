@@ -24,7 +24,7 @@ export async function GET() {
         }
 
         // Remove sensitive info before exporting
-        const { password, stripeCustomerId, stripeSubscriptionId, fcmToken, ...safeUser } = user;
+        const { password, mercadoPagoId, mercadoPagoSubscriptionId, fcmToken, ...safeUser } = user;
 
         const dataDump = {
             exportDate: new Date().toISOString(),

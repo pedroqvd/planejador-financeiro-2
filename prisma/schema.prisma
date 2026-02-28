@@ -16,8 +16,8 @@ model User {
   plan                 String        @default("free") // free, pro, premium
   aiInteractionsCount  Int           @default(0)
   aiLastInteractionAt  DateTime      @default(now())
-  stripeCustomerId     String?       @unique
-  stripeSubscriptionId String?
+  mercadoPagoId             String?       @unique
+  mercadoPagoSubscriptionId String?
   fcmToken             String?
   referralCode         String        @unique @default(cuid())
   referredBy           String?

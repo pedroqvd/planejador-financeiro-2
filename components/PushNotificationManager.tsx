@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { requestForToken } from '@/lib/firebase';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 
 export function PushNotificationManager() {
@@ -106,18 +105,17 @@ export function PushNotificationManager() {
                     Receba dicas instantâneas e avisos de limite orçamentário direto na tela bloqueada do seu celular.
                 </p>
             </div>
-            <Button
+            <button
                 onClick={subscribeToPush}
                 disabled={subscriptionStatus === 'loading'}
-                variant="outline"
-                className="w-full sm:w-auto self-start"
+                className="w-full sm:w-auto self-start px-4 py-2 border border-zinc-200 text-zinc-900 text-sm font-medium hover:bg-zinc-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 rounded-md"
             >
                 {subscriptionStatus === 'loading' ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Conectando...</>
                 ) : (
                     "Habilitar Notificações"
                 )}
-            </Button>
+            </button>
         </div>
     );
 }

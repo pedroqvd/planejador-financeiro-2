@@ -7,7 +7,7 @@ export function NavigationProgress() {
     const pathname = usePathname();
     const [progress, setProgress] = useState(0);
     const [visible, setVisible] = useState(false);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<any>(null);
 
     useEffect(() => {
         // Start progress
@@ -18,7 +18,7 @@ export function NavigationProgress() {
 
         // Simulate progress
         let p = 0;
-        timerRef.current = setInterval(() => {
+        timerRef.current = window.setInterval(() => {
             p += Math.random() * 15 + 5;
             if (p >= 90) p = 90;
             setProgress(p);

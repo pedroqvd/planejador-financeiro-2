@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { aiRatelimit } from '@/lib/rate-limit';
-import { getPlanLimits } from '@/lib/stripe';
+import { getPlanLimits } from '@/lib/plans';
 import { GoogleGenAI } from '@google/genai';
 
 let _ai: GoogleGenAI | null = null;
@@ -50,11 +50,11 @@ export async function POST(request: Request) {
 
         try {
             if (contentType.includes('multipart/form-data')) {
-                const formData = await request.formData();
+                const formData = await request.formData() as any;
                 message = (formData.get('message') as string) || '';
-                const audioFile = formData.get('audio') as File | null;
+                const audioFile = formData.get('audio');
 
-                if (audioFile) {
+                if (audioFile && typeof audioFile.arrayBuffer === 'function') {
                     const buffer = Buffer.from(await audioFile.arrayBuffer());
                     audioParts.push({
                         inlineData: {
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         const constraintUpdate = await prisma.user.updateMany({
             where: {
                 id: session.user.id,
-                aiInteractionsCount: { lt: planLimits.maxAiInteractions } // Só permite atualizar se count for menor que o limite máximo
+                aiInteractionsCount: { lt: planLimits.aiRequestsPerMonth } // Só permite atualizar se count for menor que o limite máximo
             },
             data: { aiInteractionsCount: { increment: 1 }, aiLastInteractionAt: new Date() }
         });

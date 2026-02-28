@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit } from '@/lib/rate-limit';
-import { getPlanLimits } from '@/lib/stripe';
+import { getPlanLimits } from '@/lib/plans';
 
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
 const MAX_LIMIT = 99_999_999;
@@ -70,13 +70,13 @@ export async function POST(request: Request) {
             },
         });
 
-        if (!existing && planLimits.maxBudgets !== Infinity) {
+        if (!existing && planLimits.budgetsCount !== Infinity) {
             const budgetCount = await prisma.budget.count({
                 where: { userId: session.user.id, month: currentMonth },
             });
-            if (budgetCount >= planLimits.maxBudgets) {
+            if (budgetCount >= planLimits.budgetsCount) {
                 return NextResponse.json(
-                    { error: `Limite de ${planLimits.maxBudgets} orçamento(s) no plano Free. Faça upgrade para o Pro!` },
+                    { error: `Limite de ${planLimits.budgetsCount} orçamento(s) no plano Free. Faça upgrade para o Pro!` },
                     { status: 403 }
                 );
             }
