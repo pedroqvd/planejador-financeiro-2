@@ -4,11 +4,12 @@ import { MercadoPagoConfig, PreApproval } from 'mercadopago';
 
 // MercadoPago sends webhooks when payments succeed or subscriptions are created.
 // We configure the MP Client to query the true status of the subscription ID provided in the webhook.
-const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
-const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
 
 export async function POST(req: Request) {
     try {
+        const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+        const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
+
         const url = new URL(req.url);
         const action = url.searchParams.get('action');
         const type = url.searchParams.get('type') || (await req.clone().json()).type;

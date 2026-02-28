@@ -2,13 +2,6 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { PluggyClient } from 'pluggy-sdk';
 
-// Initialize the Pluggy Client
-// This requires PLUGGY_CLIENT_ID and PLUGGY_CLIENT_SECRET in your .env
-const pluggy = new PluggyClient({
-    clientId: process.env.PLUGGY_CLIENT_ID || '',
-    clientSecret: process.env.PLUGGY_CLIENT_SECRET || '',
-});
-
 export async function GET() {
     const session = await auth();
 
@@ -26,6 +19,12 @@ export async function GET() {
     }
 
     try {
+        // Initialize the Pluggy Client inside the function
+        const pluggy = new PluggyClient({
+            clientId: process.env.PLUGGY_CLIENT_ID,
+            clientSecret: process.env.PLUGGY_CLIENT_SECRET,
+        });
+
         // We attach the user.id as the `clientUserId` to track this widget session
         const data = await pluggy.createConnectToken(undefined, {
             clientUserId: session.user.id,
