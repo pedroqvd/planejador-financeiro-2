@@ -18,7 +18,8 @@ Notifications.setNotificationHandler({
 });
 
 // URL do ambiente local ou de produção
-const APP_URL = process.env.EXPO_PUBLIC_APP_URL || 'http://10.0.2.2:3000'; // 10.0.2.2 é o localhost do Android Emulator
+// Apontando para Vercel para garantir velocidade e evitar timeout de rede local no Expo Go
+const APP_URL = process.env.EXPO_PUBLIC_APP_URL || 'https://planejador-financeiro-2.vercel.app';
 
 async function registerForPushNotificationsAsync() {
   let token;
