@@ -87,11 +87,34 @@ export function OpenFinanceManager() {
         }
     };
 
-    const onSuccess = (itemData: any) => {
+    const onSuccess = async (itemData: any) => {
         console.log('Successfully connected bank item:', itemData);
         setIsWidgetOpen(false);
-        setSuccess('Conta bancária conectada com sucesso! Os dados começarão a sincronizar em breve.');
-        fetchItems(); // Refresh the list
+        setLoading(true);
+        setSuccess('Finalizando conexão de sincronização bancária...');
+        setError('');
+
+        try {
+            const res = await fetch('/api/pluggy/items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId: itemData.item.id })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                setSuccess('Conta bancária conectada com sucesso! As transações estão sendo puxadas no fundo.');
+            } else {
+                setError(data.error || 'Erro ao registrar a conexão bancária.');
+                setSuccess('');
+            }
+        } catch (err: any) {
+            setError('Falha na comunicação com o servidor ao finalizar a conexão.');
+            setSuccess('');
+        } finally {
+            setLoading(false);
+            fetchItems(); // Refresh the list
+        }
     };
 
     const onError = (err: any) => {
@@ -158,9 +181,9 @@ export function OpenFinanceManager() {
                                     <h4 className="text-sm font-semibold text-white">{item.connectorName || 'Banco Desconhecido'}</h4>
                                     <div className="flex items-center space-x-2 mt-1">
                                         <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 ${item.status === 'UPDATED' ? 'bg-green-500/10 text-green-400' :
-                                                item.status === 'UPDATING' ? 'bg-blue-500/10 text-blue-400' :
-                                                    item.status === 'WAITING_USER_INPUT' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                        'bg-red-500/10 text-red-400'
+                                            item.status === 'UPDATING' ? 'bg-blue-500/10 text-blue-400' :
+                                                item.status === 'WAITING_USER_INPUT' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                    'bg-red-500/10 text-red-400'
                                             }`}>
                                             {item.status === 'UPDATED' ? 'Sincronizado' :
                                                 item.status === 'UPDATING' ? 'Sincronizando...' :
