@@ -1,15 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock Prisma
+const mocks = vi.hoisted(() => ({
+    user: {
+        findUnique: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+    },
+    budget: {
+        createMany: vi.fn(),
+    },
+}));
+
 vi.mock('@/lib/prisma', () => ({
     prisma: {
-        user: {
-            findUnique: vi.fn(),
-            create: vi.fn(),
-        },
-        budget: {
-            createMany: vi.fn(),
-        },
+        user: mocks.user,
+        budget: mocks.budget,
+        $transaction: vi.fn(async (cb) => {
+            return cb({ user: mocks.user, budget: mocks.budget });
+        }),
     },
 }));
 
@@ -29,8 +37,6 @@ vi.mock('bcryptjs', () => ({
 }));
 
 import { prisma } from '@/lib/prisma';
-
-// Import the route handler
 import { POST } from '@/app/api/register/route';
 
 function makeRequest(body: Record<string, unknown>): Request {

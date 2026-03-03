@@ -8,6 +8,7 @@ import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink,
 import Image from 'next/image';
 import { PushNotificationManager } from '@/components/PushNotificationManager'; // <-- NEW
 import { OpenFinanceManager } from '@/components/OpenFinanceManager';
+import { ReferralManager } from '@/components/ReferralManager';
 import { useTheme } from '@/components/ThemeProvider';
 
 function SettingsSkeleton() {
@@ -469,9 +470,19 @@ export default function SettingsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.35 }}
-                    className="bg-white border border-zinc-200 p-6"
+                    className="bg-zinc-900 border border-zinc-800 p-6"
                 >
                     <OpenFinanceManager />
+                </motion.div>
+
+                {/* Referrals Manager */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.38 }}
+                    className="bg-white border border-zinc-200 p-6"
+                >
+                    <ReferralManager />
                 </motion.div>
 
                 {/* Preferences & Data */}
