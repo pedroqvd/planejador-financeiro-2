@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { PluggyClient } from 'pluggy-sdk';
 
 // Secret key from Pluggy Dashboard to verify webhook authenticity
 const WEBHOOK_SECRET = process.env.PLUGGY_WEBHOOK_SECRET || '';
@@ -44,9 +45,8 @@ export async function POST(req: Request) {
             case 'transactions/sync':
             case 'transaction/created':
             case 'transaction/updated':
-                // Fired when new transactions are pulled
-                // Logic to fetch transactions from Pluggy API and insert into Prisma goes here
                 console.log('[Pluggy Webhook] Triggering transaction sync worker for Item:', itemId);
+                await syncTransactions(itemId);
                 break;
 
             case 'item/deleted':
@@ -102,4 +102,82 @@ async function handleItemUpdate(payload: any) {
     });
 
     console.log(`[Pluggy Webhook] Item ${itemId} mapped to user ${clientUserId}. Status: ${status}`);
+}
+
+async function syncTransactions(itemId: string) {
+    if (!process.env.PLUGGY_CLIENT_ID || !process.env.PLUGGY_CLIENT_SECRET) {
+        console.error("[Pluggy Sync] Missing Pluggy credentials.");
+        return;
+    }
+
+    try {
+        const pluggyItem = await prisma.pluggyItem.findUnique({
+            where: { pluggyItemId: itemId }
+        });
+
+        if (!pluggyItem) {
+            console.error(`[Pluggy Sync] Local PluggyItem not found for ID: ${itemId}`);
+            return;
+        }
+
+        const client = new PluggyClient({
+            clientId: process.env.PLUGGY_CLIENT_ID,
+            clientSecret: process.env.PLUGGY_CLIENT_SECRET,
+        });
+
+        // Fetch accounts first
+        const accountsResponse = await client.fetchAccounts(itemId);
+
+        for (const account of accountsResponse.results) {
+            try {
+                // Fetch transactions for each account
+                const txResponse = await client.fetchTransactions(account.id);
+                const transactions = txResponse.results;
+
+                console.log(`[Pluggy Sync] Found ${transactions.length} transactions for account ${account.name}`);
+
+                // Prepare ops for Prisma
+                for (const tx of transactions) {
+                    // Pluggy uses CREDIT for income, DEBIT for expense
+                    const type = tx.type === 'CREDIT' ? 'income' : 'expense';
+                    // We need amount to be purely positive since type dictates direction in our DB
+                    const amount = Math.abs(tx.amount || 0);
+
+                    if (amount === 0) continue;
+
+                    await prisma.transaction.upsert({
+                        where: { pluggyTransactionId: tx.id },
+                        update: {
+                            name: tx.description || 'Transação',
+                            category: tx.category || 'Outros',
+                            amount,
+                            type,
+                            date: new Date(tx.date),
+                        },
+                        create: {
+                            pluggyTransactionId: tx.id,
+                            userId: pluggyItem.userId,
+                            name: tx.description || 'Transação',
+                            category: tx.category || 'Outros',
+                            amount,
+                            type,
+                            date: new Date(tx.date),
+                        }
+                    });
+                }
+            } catch (err: any) {
+                console.error(`[Pluggy Sync] Error fetching transactions for account ${account.id}:`, err.message);
+            }
+        }
+
+        // Update the lastSyncAt on the item
+        await prisma.pluggyItem.update({
+            where: { id: pluggyItem.id },
+            data: { lastSyncAt: new Date(), status: 'UPDATED' }
+        });
+
+        console.log(`[Pluggy Sync] Finished syncing transactions for Item ${itemId}`);
+    } catch (error: any) {
+        console.error("[Pluggy Sync Error]:", error.message);
+    }
 }
