@@ -10,6 +10,7 @@ export function ReferralCard({ code, count }: { code: string; count: number }) {
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            // eslint-disable-next-line
             setLink(`${window.location.origin}/register?ref=${code}`);
         }
     }, [code]);
