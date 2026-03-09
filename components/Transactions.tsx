@@ -41,10 +41,12 @@ function getCategoryStyle(category: string) {
 
 export function Transactions({
   data,
+  limit,
   onEdit,
   onDelete,
 }: {
   data: Transaction[];
+  limit?: number;
   onEdit?: (transaction: Transaction) => void;
   onDelete?: (id: string) => void;
 }) {
@@ -77,6 +79,14 @@ export function Transactions({
     >
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-editorial font-bold text-zinc-900">Transações Recentes</h2>
+        {limit && data.length > limit && (
+          <a
+            href="/transactions"
+            className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 transition-colors"
+          >
+            Ver todas →
+          </a>
+        )}
       </div>
 
       <div className="divide-y divide-zinc-100">
@@ -85,7 +95,7 @@ export function Transactions({
             Nenhuma transação registrada ainda.
           </div>
         ) : (
-          data.slice(0, 50).map((transaction, index) => {
+          data.slice(0, limit || 50).map((transaction, index) => {
             const style = getCategoryStyle(transaction.category);
             const IconComponent = style.icon;
             const isConfirming = confirmId === transaction.id;

@@ -4,13 +4,14 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { DashboardOverview } from '@/components/DashboardOverview';
 import { Charts } from '@/components/Charts';
 import { Transactions } from '@/components/Transactions';
+import { BudgetProgress } from '@/components/BudgetProgress';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { ImportModal } from '@/components/ImportModal';
 import { ReferralCard } from '@/components/ReferralCard';
 import { useSession } from 'next-auth/react';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Upload, Sparkles, X } from 'lucide-react';
+import { Plus, Upload, Sparkles, X, Wallet, PiggyBank } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -19,9 +20,14 @@ function getGreeting() {
   return 'Boa noite';
 }
 
+function formatCurrency(value: number) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 type DashboardData = {
   stats: { netWorth: number; income: number; expenses: number; investments: number };
   chartData: { name: string; receitas: number; despesas: number }[];
+  budgets?: { id: string; category: string; limit: number; spent: number; month: string }[];
   referral?: { referralCode: string; referralsCount: number };
 };
 
@@ -54,7 +60,7 @@ export default function Home() {
         ]);
 
         let dashData = null;
-        let transData = [];
+        let transData: Transaction[] = [];
 
         if (dashRes.ok) dashData = await dashRes.json();
         if (transRes.ok) {
@@ -73,8 +79,7 @@ export default function Home() {
 
     fetchData();
 
-    // AI Coach Background Trigger
-    // Check if we need to call the AI Coach (Debounce of 36 hours)
+    // AI Coach Background Trigger (debounced 36h)
     const lastCoachCall = localStorage.getItem('wealthcash_last_coach');
     const now = Date.now();
     const thirtySixHours = 36 * 60 * 60 * 1000;
@@ -86,20 +91,14 @@ export default function Home() {
             const aiRes = await fetch('/api/ai/coach');
             if (aiRes.ok) {
               const insight = await aiRes.json();
-
-              if (insight && insight.title && insight.message) {
-                // Show floating Toast
+              if (insight?.title && insight?.message) {
                 setCoachInsight(insight);
                 localStorage.setItem('wealthcash_last_coach', now.toString());
-
-                // Persist to notifications tray
                 await fetch('/api/notifications/ai', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(insight)
                 });
-
-                // Auto dismiss toast after 8 seconds
                 setTimeout(() => setCoachInsight(null), 8000);
               }
             }
@@ -107,20 +106,15 @@ export default function Home() {
             console.error('Coach silent trigger failed:', e);
           }
         };
-
-        // Delay execution to not block main TTI render
         const coachTimeout = setTimeout(triggerCoach, 3000);
         return () => { clearTimeout(coachTimeout); mounted = false; };
       }
     }
 
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [session?.user?.plan]);
 
   const refreshData = () => {
-    // Allows manual refresh from modals without triggering effect deps
     Promise.all([
       fetch('/api/dashboard'),
       fetch('/api/transactions'),
@@ -135,7 +129,9 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-5">
+
+        {/* ─── Header: Greeting + Actions ─── */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -168,18 +164,81 @@ export default function Home() {
           </div>
         </motion.div>
 
+        {/* ─── Zone 1: Hero KPIs (Receitas, Despesas, Saldo + Health Bar) ─── */}
         <DashboardOverview stats={dashboard?.stats || null} />
 
-        {dashboard?.referral && (
-          <ReferralCard code={dashboard.referral.referralCode} count={dashboard.referral.referralsCount} />
-        )}
+        {/* ─── Zone 2: Chart + Budgets (side by side) ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <div className="lg:col-span-3">
+            <Charts data={dashboard?.chartData || []} loading={!dashboard} />
+          </div>
+          <div className="lg:col-span-2">
+            <BudgetProgress budgets={dashboard?.budgets || []} />
+          </div>
+        </div>
 
-        <div className="space-y-6">
-          <Charts data={dashboard?.chartData || []} loading={!dashboard} />
-          <Transactions data={transactions} />
+        {/* ─── Zone 3: Transactions + Secondary Cards ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          {/* Recent Transactions (primary) */}
+          <div className="lg:col-span-3">
+            <Transactions data={transactions} limit={5} />
+          </div>
+
+          {/* Secondary Cards: Patrimônio + Investimentos + Referral */}
+          <div className="lg:col-span-2 space-y-3">
+            {/* Patrimônio Líquido */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.4 }}
+              className="bg-white border border-zinc-200 p-5 hover:bg-zinc-50/80 transition-colors duration-300"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-zinc-100 flex items-center justify-center">
+                  <Wallet className="w-[18px] h-[18px] text-zinc-500" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
+                    Patrimônio Líquido
+                  </p>
+                  <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
+                    {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth) : '—'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Investimentos */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.4 }}
+              className="bg-white border border-zinc-200 p-5 hover:bg-zinc-50/80 transition-colors duration-300"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-zinc-100 flex items-center justify-center">
+                  <PiggyBank className="w-[18px] h-[18px] text-zinc-500" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
+                    Investimentos
+                  </p>
+                  <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
+                    {dashboard?.stats ? formatCurrency(dashboard.stats.investments) : '—'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Referral Card */}
+            {dashboard?.referral && (
+              <ReferralCard code={dashboard.referral.referralCode} count={dashboard.referral.referralsCount} />
+            )}
+          </div>
         </div>
       </div>
 
+      {/* ─── Modals ─── */}
       {showAddModal && (
         <AddTransactionModal
           onClose={() => setShowAddModal(false)}
@@ -194,7 +253,7 @@ export default function Home() {
         />
       )}
 
-      {/* AI Coach Toast Notification */}
+      {/* ─── AI Coach Toast ─── */}
       <AnimatePresence>
         {coachInsight && (
           <motion.div
@@ -203,7 +262,9 @@ export default function Home() {
             exit={{ opacity: 0, scale: 0.9, x: '10%' }}
             className="fixed bottom-24 right-6 w-80 bg-zinc-900 border border-zinc-800 text-white shadow-2xl z-50 overflow-hidden"
           >
-            <div className={`h-1 w-full absolute top-0 left-0 bg-${coachInsight.type === 'warning' ? 'rose' : coachInsight.type === 'success' ? 'emerald' : 'sky'}-500`} />
+            <div className={`h-1 w-full absolute top-0 left-0 ${coachInsight.type === 'warning' ? 'bg-rose-500' :
+                coachInsight.type === 'success' ? 'bg-emerald-500' : 'bg-sky-500'
+              }`} />
             <div className="p-5">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center space-x-2">

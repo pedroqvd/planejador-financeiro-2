@@ -3,14 +3,11 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
+import { sanitize } from '@/lib/utils';
 
 const MAX_AMOUNT = 99_999_999;
 const VALID_ICONS = ['Target', 'Plane', 'Home', 'GraduationCap', 'Car', 'Heart', 'Shield', 'Gift', 'Wallet', 'PiggyBank', 'Gem'];
 const VALID_COLORS = ['sky', 'violet', 'emerald', 'amber', 'rose', 'indigo', 'teal', 'orange', 'pink', 'cyan'];
-
-function sanitize(str: string): string {
-    return str.replace(/[<>&"'/\\]/g, '').trim().slice(0, 200);
-}
 
 export async function GET() {
     const session = await auth();

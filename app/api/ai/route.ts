@@ -3,31 +3,15 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { aiRatelimit } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiClient } from '@/lib/gemini';
+import { sanitize } from '@/lib/utils';
 
-let _ai: GoogleGenAI | null = null;
-function getAI() {
-    if (!_ai) {
-        _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-    }
-    return _ai;
-}
+const VALID_TYPES = ['income', 'expense'] as const;
+const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
+const MAX_AMOUNT = 99_999_999;
 
 export async function POST(request: Request) {
-    let session = await auth();
-
-    // RED TEAM DEV BACKDOOR (Only active in development)
-    const redTeamEmailRaw = request.headers.get('x-red-team-auth');
-    if (process.env.NODE_ENV === 'development' && redTeamEmailRaw) {
-        // Strip "free_test_" prefix if present to find the real user
-        const realEmail = redTeamEmailRaw.replace('free_test_', '');
-        const dbUser = await prisma.user.findUnique({ where: { email: realEmail } });
-        if (dbUser) {
-            // If the header specifies "free_test", override the plan to free.
-            const forcedPlan = redTeamEmailRaw.includes('free_test_') ? 'free' : dbUser.plan;
-            session = { user: { id: dbUser.id, plan: forcedPlan, name: dbUser.name, email: dbUser.email }, expires: '' };
-        }
-    }
+    const session = await auth();
 
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -120,7 +104,7 @@ export async function POST(request: Request) {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const userName = session.user.name || 'Usuário';
 
-        const sanitizedMessage = message ? message.replace(/[<>&"'\\]/g, '').trim() : '(Mensagem enviada por áudio)';
+        const sanitizedMessage = message ? sanitize(message) : '(Mensagem enviada por áudio)';
 
         // Fetch user's financial context (minimal data)
         const [recentTransactions, budgets, goals, incomeAgg, expenseAgg] = await Promise.all([
@@ -205,7 +189,7 @@ ${context}`;
             parts.push(...audioParts);
         }
 
-        const response = await getAI().models.generateContent({
+        const response = await getGeminiClient().models.generateContent({
             model: 'gemini-2.0-flash',
             contents: [{ role: 'user', parts }],
         });
@@ -219,25 +203,37 @@ ${context}`;
             if (clearJson.startsWith('{') && clearJson.includes('"action": "create_transaction"')) {
                 const actionData = JSON.parse(clearJson);
 
-                // execute the action
-                if (actionData.action === 'create_transaction' && actionData.amount && actionData.category) {
+                // Validate AI-generated transaction data with the same rules as manual transactions
+                const txName = sanitize(String(actionData.name || 'Nova Transação Via IA'), 200);
+                const txCategory = String(actionData.category || '');
+                const txAmount = Number(actionData.amount);
+                const txType = String(actionData.type || 'expense');
+
+                const isValidTx = (
+                    actionData.action === 'create_transaction' &&
+                    VALID_CATEGORIES.includes(txCategory) &&
+                    VALID_TYPES.includes(txType as typeof VALID_TYPES[number]) &&
+                    !isNaN(txAmount) && txAmount > 0 && txAmount <= MAX_AMOUNT
+                );
+
+                if (isValidTx) {
                     await prisma.transaction.create({
                         data: {
-                            name: actionData.name || 'Nova Transação Via IA',
-                            category: actionData.category,
-                            amount: Number(actionData.amount),
-                            type: actionData.type || 'expense',
+                            name: txName,
+                            category: txCategory,
+                            amount: txAmount,
+                            type: txType,
                             date: new Date(),
                             userId: session.user.id,
                         }
                     });
 
                     // Update budget if it's an expense
-                    if (actionData.type === 'expense') {
+                    if (txType === 'expense') {
                         const month = new Date().toISOString().slice(0, 7);
                         await prisma.budget.updateMany({
-                            where: { userId: session.user.id, category: actionData.category, month },
-                            data: { spent: { increment: Number(actionData.amount) } },
+                            where: { userId: session.user.id, category: txCategory, month },
+                            data: { spent: { increment: txAmount } },
                         });
                     }
 

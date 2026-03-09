@@ -46,7 +46,7 @@ describe('DashboardOverview', () => {
         expect(pulsingElements.length).toBeGreaterThan(0);
     });
 
-    it('should render all 4 stat cards when stats are provided', () => {
+    it('should render all 3 stat cards and health bar when stats are provided', () => {
         render(
             <DashboardOverview
                 stats={{
@@ -58,14 +58,14 @@ describe('DashboardOverview', () => {
             />
         );
 
-        // Check formatted currency values are in the document
-        expect(screen.getByText(/Patrimônio Líquido/i)).toBeInTheDocument();
-        expect(screen.getByText(/Receitas/i)).toBeInTheDocument();
-        expect(screen.getByText(/Despesas/i)).toBeInTheDocument();
-        expect(screen.getByText(/Investimentos/i)).toBeInTheDocument();
+        // Check new card labels are in the document
+        expect(screen.getByText(/Receitas do mês/i)).toBeInTheDocument();
+        expect(screen.getByText(/Despesas do mês/i)).toBeInTheDocument();
+        expect(screen.getByText(/Saldo do mês/i)).toBeInTheDocument();
+        expect(screen.getByText(/Saúde Financeira/i)).toBeInTheDocument();
     });
 
-    it('should display formatted currency values', () => {
+    it('should display formatted currency values for income, expenses, and balance', () => {
         render(
             <DashboardOverview
                 stats={{
@@ -78,19 +78,22 @@ describe('DashboardOverview', () => {
         );
 
         // Check that values are formatted in BRL
-        expect(screen.getByText(/12\.345,67/)).toBeInTheDocument();
+        // 8000 (Income), 3000 (Expenses), 5000 (Balance)
         expect(screen.getByText(/8\.000,00/)).toBeInTheDocument();
+        expect(screen.getByText(/3\.000,00/)).toBeInTheDocument();
+        expect(screen.getByText(/5\.000,00/)).toBeInTheDocument();
     });
 
-    it('should render net worth card with special styling', () => {
+    it('should render balance card with dark background', () => {
         const { container } = render(
             <DashboardOverview
                 stats={{ netWorth: 1000, income: 500, expenses: 200, investments: 300 }}
             />
         );
 
-        // The first card (Patrimônio) should have dark background
+        // The balance card should have dark background (bg-zinc-900)
         const darkCard = container.querySelector('.bg-zinc-900');
         expect(darkCard).toBeInTheDocument();
+        expect(darkCard).toHaveTextContent(/Saldo do mês/i);
     });
 });

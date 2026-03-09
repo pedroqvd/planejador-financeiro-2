@@ -2,14 +2,11 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { authRatelimit, getClientIp } from '@/lib/rate-limit';
+import { sanitize } from '@/lib/utils';
 import crypto from 'crypto';
 
 function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
-}
-
-function sanitize(str: string): string {
-    return str.replace(/[<>&"'/\\]/g, '').trim();
 }
 
 export async function POST(request: Request) {

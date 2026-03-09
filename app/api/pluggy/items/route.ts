@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PluggyClient } from 'pluggy-sdk';
+import { syncPluggyTransactions } from '@/lib/pluggy-sync';
 
 export async function GET() {
     const session = await auth();
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
         });
 
         // Trigger manual sync in background (fire and forget to not block UI)
-        syncTransactions(itemId, session.user.id, client).catch(console.error);
+        syncPluggyTransactions(itemId, session.user.id, client).catch(console.error);
 
         return NextResponse.json({ success: true, item: savedItem });
     } catch (error: any) {
@@ -84,61 +85,6 @@ export async function POST(req: Request) {
     }
 }
 
-// Minimal sync worker to ensure data is fetched immediately
-async function syncTransactions(itemId: string, userId: string, client: PluggyClient) {
-    try {
-        console.log(`[Manual Sync] Starting background sync for item ${itemId}`);
-        const accountsResponse = await client.fetchAccounts(itemId);
-
-        for (const account of accountsResponse.results) {
-            try {
-                const txResponse = await client.fetchTransactions(account.id);
-                const transactions = txResponse.results;
-                console.log(`[Manual Sync] Found ${transactions.length} transactions for account ${account.name}`);
-
-                for (const tx of transactions) {
-                    const type = tx.type === 'CREDIT' ? 'income' : 'expense';
-                    const amount = Math.abs(tx.amount || 0);
-                    if (amount === 0) continue;
-
-                    await prisma.transaction.upsert({
-                        where: { pluggyTransactionId: tx.id },
-                        update: {
-                            name: tx.description || 'Transação',
-                            category: tx.category || 'Outros',
-                            amount,
-                            type,
-                            date: new Date(tx.date),
-                        },
-                        create: {
-                            pluggyTransactionId: tx.id,
-                            userId: userId,
-                            name: tx.description || 'Transação',
-                            category: tx.category || 'Outros',
-                            amount,
-                            type,
-                            date: new Date(tx.date),
-                        }
-                    });
-                }
-            } catch (err: any) {
-                console.error(`[Manual Sync] Error fetching transactions for account ${account.id}:`, err.message);
-            }
-        }
-
-        await prisma.pluggyItem.update({
-            where: { pluggyItemId: itemId },
-            data: { lastSyncAt: new Date(), status: 'UPDATED' }
-        });
-        console.log(`[Manual Sync] Finished syncing transactions for Item ${itemId}`);
-    } catch (error: any) {
-        console.error("[Manual Sync Error]:", error.message);
-        await prisma.pluggyItem.update({
-            where: { pluggyItemId: itemId },
-            data: { status: 'UPDATED', error: "Falha leve ao sincronizar." }
-        });
-    }
-}
 
 export async function DELETE(req: Request) {
     const session = await auth();

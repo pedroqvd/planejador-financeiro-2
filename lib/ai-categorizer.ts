@@ -1,15 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
-
-let _ai: GoogleGenAI | null = null;
-function getAI() {
-    if (!_ai) {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new Error('GEMINI_API_KEY is not set');
-        }
-        _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    }
-    return _ai;
-}
+import { getGeminiClient } from '@/lib/gemini';
 
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
 
@@ -24,7 +13,7 @@ export async function categorizeTransactionsBatch(transactions: { id: string, na
 
     if (transactions.length === 0) return {};
 
-    const ai = getAI();
+    const ai = getGeminiClient();
     const prompt = `
 Você é um assistente financeiro no Brasil. Sua tarefa é analisar a lista de nomes de transações financeiras (geralmente extraídas de cartão de crédito ou extrato bancário) e classificá-las em EXATAMENTE UMA das seguintes categorias válidas:
 ${VALID_CATEGORIES.join(', ')}

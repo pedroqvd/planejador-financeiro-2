@@ -3,16 +3,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiClient } from '@/lib/gemini';
 import { sendPushNotification } from '@/lib/firebase-admin';
-
-let _ai: GoogleGenAI | null = null;
-function getAI() {
-    if (!_ai) {
-        _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-    }
-    return _ai;
-}
 
 export async function GET() {
     const session = await auth();
@@ -122,7 +114,7 @@ FORMATO JSON OBRIGATÓRIO DA RESPOSTA:
 Analise os dados abaixo e gere o insight:
 ${context}`;
 
-        const response = await getAI().models.generateContent({
+        const response = await getGeminiClient().models.generateContent({
             model: 'gemini-2.0-flash',
             contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
             config: {

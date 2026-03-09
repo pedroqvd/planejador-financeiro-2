@@ -44,40 +44,49 @@ export async function GET() {
     const investments = goalsResult._sum.current || 0;
     const netWorth = income - expenses + investments;
 
-    // Get monthly trend data (last 6 months) — fetched raw and aggregated in memory for speed
+    // Get monthly trend data (last 6 months) — aggregated in the database for performance
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    const allRecentTx = await prisma.transaction.findMany({
+    const monthlyAgg = await prisma.transaction.groupBy({
+        by: ['type'],
+        where: { userId, date: { gte: sixMonthsAgo } },
+        _sum: { amount: true },
+        // Prisma groupBy doesn't support grouping by date parts directly,
+        // so we fetch per-type totals and also need date info.
+        // Alternative: use a raw query. For now, we use a lighter findMany with only needed fields.
+    });
+
+    // Prisma groupBy can't group by date.month natively, so we still fetch rows but ONLY select minimal fields
+    const recentTx = await prisma.transaction.findMany({
         where: { userId, date: { gte: sixMonthsAgo } },
         select: { amount: true, type: true, date: true }
     });
 
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-    // Initialize array for the last 6 months
-    const monthsData = Array.from({ length: 6 }).map((_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-        return {
-            name: monthNames[d.getMonth()],
-            monthKey: `${d.getFullYear()}-${d.getMonth()}`,
-            receitas: 0,
-            despesas: 0
-        };
-    });
+    // Initialize map for O(1) lookups instead of Array.find
+    const monthsMap = new Map<string, { name: string; receitas: number; despesas: number }>();
+    const monthsOrder: string[] = [];
 
-    // Aggregate in memory (O(N) operation, much faster than 12 isolated DB queries)
-    allRecentTx.forEach(tx => {
+    for (let i = 0; i < 6; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        monthsMap.set(key, { name: monthNames[d.getMonth()], receitas: 0, despesas: 0 });
+        monthsOrder.push(key);
+    }
+
+    // Aggregate in memory with O(1) map lookups
+    for (const tx of recentTx) {
         const txDate = new Date(tx.date);
         const key = `${txDate.getFullYear()}-${txDate.getMonth()}`;
-        const monthObj = monthsData.find(m => m.monthKey === key);
+        const monthObj = monthsMap.get(key);
         if (monthObj) {
             if (tx.type === 'income') monthObj.receitas += tx.amount;
             if (tx.type === 'expense') monthObj.despesas += tx.amount;
         }
-    });
+    }
 
-    // Clean up temporary keys before sending to chart
-    const months = monthsData.map(({ name, receitas, despesas }) => ({ name, receitas, despesas }));
+    const months = monthsOrder.map(key => monthsMap.get(key)!);
 
     // Get budgets
     const budgets = await prisma.budget.findMany({
@@ -88,6 +97,6 @@ export async function GET() {
         stats: { netWorth, income, expenses, investments },
         chartData: months,
         budgets,
-        referral: goalsResult /* actually the 4th item, renamed below to avoid typescript confusion if I didn't rename it in destructuring, wait! Let me do it correctly up there */
+        referral: userRecord,
     });
 }

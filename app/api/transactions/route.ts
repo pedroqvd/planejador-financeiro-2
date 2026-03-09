@@ -3,14 +3,11 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit, getClientIp } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
+import { sanitize } from '@/lib/utils';
 
 const VALID_TYPES = ['income', 'expense'] as const;
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
 const MAX_AMOUNT = 99_999_999;
-
-function sanitize(str: string): string {
-    return str.replace(/[<>&"'/\\]/g, '').trim().slice(0, 200);
-}
 
 export async function GET(request: Request) {
     const session = await auth();

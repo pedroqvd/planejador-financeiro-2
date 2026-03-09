@@ -15,7 +15,7 @@ export async function GET() {
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
 
-        const existingToday = await (prisma as any).notification.findFirst({
+        const existingToday = await prisma.notification.findFirst({
             where: { userId, createdAt: { gte: startOfDay } }
         });
 
@@ -28,13 +28,13 @@ export async function GET() {
             for (const b of budgets) {
                 const pct = b.limit > 0 ? (b.spent / b.limit) * 100 : 0;
                 if (pct >= 100) {
-                    await (prisma as any).notification.create({
+                    await prisma.notification.create({
                         data: {
                             userId, title: 'Orçamento estourado', message: `Você ultrapassou o limite de ${b.category}.`, type: 'warning'
                         }
                     });
                 } else if (pct >= 80) {
-                    await (prisma as any).notification.create({
+                    await prisma.notification.create({
                         data: {
                             userId, title: 'Orçamento no limite', message: `${b.category}: ${pct.toFixed(0)}% utilizado.`, type: 'info'
                         }
@@ -47,13 +47,13 @@ export async function GET() {
             for (const g of goals) {
                 const pct = g.target > 0 ? (g.current / g.target) * 100 : 0;
                 if (pct >= 100) {
-                    await (prisma as any).notification.create({
+                    await prisma.notification.create({
                         data: {
                             userId, title: 'Meta atingida! 🎉', message: `Você completou a meta "${g.name}"!`, type: 'success'
                         }
                     });
                 } else if (pct >= 75) {
-                    await (prisma as any).notification.create({
+                    await prisma.notification.create({
                         data: {
                             userId, title: 'Meta quase lá', message: `"${g.name}": ${pct.toFixed(0)}% concluída.`, type: 'info'
                         }
@@ -63,14 +63,14 @@ export async function GET() {
         }
 
         // 2. Fetch all unread notifications
-        const notifications = await (prisma as any).notification.findMany({
+        const notifications = await prisma.notification.findMany({
             where: { userId, read: false },
             orderBy: { createdAt: 'desc' },
             take: 10
         });
 
         // Map them to the UI format
-        const formatted = notifications.map((n: any) => ({
+        const formatted = notifications.map((n) => ({
             id: n.id,
             title: n.title,
             message: n.message,
@@ -95,12 +95,13 @@ export async function POST(request: Request) {
         const { id } = await request.json();
 
         if (id === 'all') {
-            await (prisma as any).notification.updateMany({
+            await prisma.notification.updateMany({
                 where: { userId: session.user.id, read: false },
                 data: { read: true }
             });
         } else if (id) {
-            await (prisma as any).notification.update({
+            // IDOR fix: use updateMany with userId filter instead of update with PK only
+            await prisma.notification.updateMany({
                 where: { id, userId: session.user.id },
                 data: { read: true }
             });

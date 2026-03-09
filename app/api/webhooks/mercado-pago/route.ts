@@ -1,25 +1,80 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MercadoPagoConfig, PreApproval } from 'mercadopago';
+import crypto from 'crypto';
 
 // MercadoPago sends webhooks when payments succeed or subscriptions are created.
 // We configure the MP Client to query the true status of the subscription ID provided in the webhook.
 
+const MP_WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET || '';
+
+/**
+ * Verifies the x-signature header from Mercado Pago webhooks.
+ * @see https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks#editor_13
+ */
+function verifyMPSignature(xSignature: string | null, xRequestId: string | null, dataId: string): boolean {
+    if (!MP_WEBHOOK_SECRET || !xSignature) return false;
+
+    // Parse the x-signature header: "ts=...,v1=..."
+    const parts: Record<string, string> = {};
+    xSignature.split(',').forEach(part => {
+        const [key, value] = part.split('=', 2);
+        if (key && value) parts[key.trim()] = value.trim();
+    });
+
+    const ts = parts['ts'];
+    const v1 = parts['v1'];
+    if (!ts || !v1) return false;
+
+    // Build the manifest string as documented by MercadoPago
+    const manifest = `id:${dataId};request-id:${xRequestId || ''};ts:${ts};`;
+
+    const expectedHmac = crypto
+        .createHmac('sha256', MP_WEBHOOK_SECRET)
+        .update(manifest)
+        .digest('hex');
+
+    // Use timingSafeEqual to prevent timing attacks
+    if (v1.length !== expectedHmac.length) return false;
+    try {
+        return crypto.timingSafeEqual(
+            Buffer.from(v1, 'hex'),
+            Buffer.from(expectedHmac, 'hex')
+        );
+    } catch {
+        return false;
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || '';
-        const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
+
+        // Signature verification (when secret is configured)
+        const xSignature = req.headers.get('x-signature');
+        const xRequestId = req.headers.get('x-request-id');
 
         const url = new URL(req.url);
         const action = url.searchParams.get('action');
-        const type = url.searchParams.get('type') || (await req.clone().json()).type;
-        const body = await req.json();
+        const dataId = url.searchParams.get('data.id') || '';
+        const type = url.searchParams.get('type');
 
-        console.log(`[MercadoPago Webhook] Received action: ${action}, type: ${type}`);
+        // Verify webhook authenticity if secret is configured
+        if (MP_WEBHOOK_SECRET && !verifyMPSignature(xSignature, xRequestId, dataId)) {
+            console.warn('[MercadoPago Webhook] Invalid signature detected.');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+
+        const body = await req.json();
+        const eventType = type || body.type;
+
+        console.log(`[MercadoPago Webhook] Received action: ${action}, type: ${eventType}`);
+
+        const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
 
         // We only care about subscription events (Preapproval)
-        if (type === 'subscription_preapproval') {
-            const subscriptionId = body.data?.id;
+        if (eventType === 'subscription_preapproval') {
+            const subscriptionId = body.data?.id || dataId;
 
             if (!subscriptionId) {
                 return NextResponse.json({ error: 'Missing subscription ID' }, { status: 400 });
@@ -59,7 +114,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // Always return 200 OM to MercadoPago to confirm receipt
+        // Always return 200 OK to MercadoPago to confirm receipt
         return NextResponse.json({ received: true });
     } catch (error: any) {
         console.error('[MercadoPago Webhook Error]:', error.message || error);

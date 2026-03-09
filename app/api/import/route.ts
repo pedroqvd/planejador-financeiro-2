@@ -2,15 +2,9 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit, getClientIp } from '@/lib/rate-limit';
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiClient } from '@/lib/gemini';
 
-let _ai: GoogleGenAI | null = null;
-function getAI() {
-    if (!_ai) {
-        _ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-    }
-    return _ai;
-}
+const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Saúde', 'Educação', 'Compras', 'Outros'];
 
 export async function POST(request: Request) {
     const session = await auth();
@@ -70,7 +64,7 @@ REGRAS:
 Se você não identificar o ano no documento, presuma o ano atual.
 Execute agora. Retorne o [ ... ] JSON.`;
 
-        const response = await getAI().models.generateContent({
+        const response = await getGeminiClient().models.generateContent({
             model: 'gemini-2.0-flash',
             contents: [
                 {
@@ -108,14 +102,16 @@ Execute agora. Retorne o [ ... ] JSON.`;
         // Safety cap
         const toImport = transactionsData.slice(0, 500);
 
-        const mappedData = toImport.map((t: any) => ({
-            name: String(t.name).slice(0, 50) || 'Transação Importada',
-            category: String(t.category) || 'Outros',
-            amount: Number(t.amount) || 0,
-            type: t.type === 'income' ? 'income' : 'expense',
-            date: t.date ? new Date(t.date) : new Date(),
-            userId: session.user.id
-        }));
+        const mappedData = toImport
+            .map((t: any) => ({
+                name: String(t.name).slice(0, 50) || 'Transação Importada',
+                category: VALID_CATEGORIES.includes(String(t.category)) ? String(t.category) : 'Outros',
+                amount: Number(t.amount) || 0,
+                type: t.type === 'income' ? 'income' : 'expense',
+                date: t.date ? new Date(t.date) : new Date(),
+                userId: session.user.id
+            }))
+            .filter((t: any) => t.amount > 0); // Filter out zero/negative amounts
 
         const created = await prisma.transaction.createMany({
             data: mappedData
