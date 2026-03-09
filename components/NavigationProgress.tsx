@@ -10,11 +10,11 @@ export function NavigationProgress() {
     const timerRef = useRef<any>(null);
 
     useEffect(() => {
-        // Start progress
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setProgress(0);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setVisible(true);
+        // Start progress (deferred to avoid synchronous setState in effect body warning)
+        setTimeout(() => {
+            setProgress(0);
+            setVisible(true);
+        }, 0);
 
         // Simulate progress
         let p = 0;

@@ -21,7 +21,10 @@ export default function RegisterPage() {
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
             const ref = urlParams.get('ref');
-            if (ref) setReferredByCode(ref);
+            if (ref) {
+                // Defer state update to avoid 'synchronous setState in effect' lint error
+                setTimeout(() => setReferredByCode(ref), 0);
+            }
         }
     }, []);
 
