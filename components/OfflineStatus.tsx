@@ -8,9 +8,12 @@ export function OfflineStatus() {
     const [isOffline, setIsOffline] = useState(false);
 
     useEffect(() => {
-        if (typeof navigator !== 'undefined' && !navigator.onLine) {
-            setIsOffline(true);
-        }
+        // Check initial state after mountain to avoid sync setState in effect body error
+        Promise.resolve().then(() => {
+            if (typeof navigator !== 'undefined' && !navigator.onLine) {
+                setIsOffline(true);
+            }
+        });
 
         const handleOnline = () => setIsOffline(false);
         const handleOffline = () => setIsOffline(true);
