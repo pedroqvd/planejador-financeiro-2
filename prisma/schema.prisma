@@ -31,6 +31,7 @@ model User {
   notifications        Notification[]
   investments          Investment[]
   pluggyItems          PluggyItem[]
+  recurrences          Recurrence[]
 
   @@index([email])
 }
@@ -136,4 +137,23 @@ model PluggyItem {
   lastSyncAt      DateTime? // Last time transactions where pulled
 
   @@index([userId])
+}
+
+model Recurrence {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   @default("Outros")
+  amount      Float
+  type        String   // 'expense' | 'income'
+  frequency   String   @default("monthly") // 'monthly' | 'weekly' | 'annual'
+  nextDueDate DateTime
+  active      Boolean  @default(true)
+  color       String   @default("violet")
+  icon        String   @default("RefreshCcw")
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, active])
 }

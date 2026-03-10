@@ -11,7 +11,8 @@ import {
   Sparkles,
   X,
   CreditCard,
-  BarChart3
+  BarChart3,
+  RefreshCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,6 +26,7 @@ const navItems = [
   { name: 'Faturas', href: '/faturas', icon: CreditCard },
   { name: 'Orçamento', href: '/budget', icon: Wallet },
   { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
+  { name: 'Assinaturas', href: '/recorrencias', icon: RefreshCcw },
   { name: 'Investimentos', href: '/investments', icon: PieChart },
   { name: 'Objetivos', href: '/goals', icon: Target },
   { name: 'Plano Pro ✨', href: '/upgrade', icon: Sparkles },
