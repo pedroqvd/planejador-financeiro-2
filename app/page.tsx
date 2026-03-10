@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { DashboardOverview } from '@/components/DashboardOverview';
-import { RecentTransactions } from '@/components/RecentTransactions';
+import { Transactions } from '@/components/Transactions';
 import { BudgetProgress } from '@/components/BudgetProgress';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { SmartBudgetModal } from '@/components/SmartBudgetModal';
@@ -126,7 +126,7 @@ export default function Dashboard() {
 
           {/* Main Content (Transactions) */}
           <div className="lg:col-span-2 space-y-4">
-            <RecentTransactions transactions={dashboard?.recentTransactions || []} loading={loading} />
+            <Transactions data={dashboard?.recentTransactions || []} limit={5} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Patrimônio Líquido */}
@@ -177,7 +177,7 @@ export default function Dashboard() {
 
           {/* Sidebar Area (Budgets) */}
           <div className="space-y-4">
-            <BudgetProgress budgets={dashboard?.budgets || []} loading={loading} />
+            <BudgetProgress budgets={dashboard?.budgets || []} />
 
             {/* AI Coach Card */}
             <AnimatePresence>
@@ -201,7 +201,7 @@ export default function Dashboard() {
                       <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-400">Cash IA Coach</span>
                     </div>
                     <p className="text-sm font-medium leading-relaxed">
-                      "Você gastou 15% menos em lazer esta semana. Que tal direcionar esse valor para sua reserva de emergência?"
+                      &quot;Você gastou 15% menos em lazer esta semana. Que tal direcionar esse valor para sua reserva de emergência?&quot;
                     </p>
                     <button className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all">
                       Consultar IA
