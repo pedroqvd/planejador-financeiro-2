@@ -42,41 +42,68 @@
   --shadow-md: 0 4px 6px -1px rgb(0 43 54 / 0.05), 0 2px 4px -2px rgb(0 43 54 / 0.05);
   --shadow-lg: 0 10px 25px -3px rgb(0 43 54 / 0.05), 0 4px 6px -4px rgb(0 43 54 / 0.05);
   --transition-base: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Chart-specific */
+  --chart-grid: #f4f4f5;
+  --chart-tick: #a1a1aa;
+  --tooltip-bg: #ffffff;
+  --tooltip-border: #e4e4e7;
+
+  /* Tinted accent backgrounds for light mode */
+  --emerald-tint: #ecfdf5;
+  --rose-tint: #fff1f2;
+  --sky-tint: #f0f9ff;
+  --violet-tint: #f5f3ff;
+  --amber-tint: #fffbeb;
+
   color-scheme: light;
 }
 
 .dark {
-  /* Dark Modern Theme (VS Code) */
-  --accent-gold: #d7ba7d;
-  --accent-ink: #007acc;
-  --bg-cream: #1e1e1e;
-  --bg-sidebar: #181818;
-  --bg-card: #252526;
-  --bg-input: #2d2d2d;
-  --border-color: #3c3c3c;
-  --text-primary: #cccccc;
-  --text-secondary: #999999;
+  /* Premium Deep Slate Theme */
+  --accent-gold: #e2c792;
+  --accent-ink: #818cf8;
+  --bg-cream: #0f172a;
+  --bg-sidebar: #0b1120;
+  --bg-card: #1e293b;
+  --bg-input: #1e293b;
+  --border-color: #334155;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
 
   /* Generic tailwind overrides for Dark Mode */
-  --tw-bg-zinc-50: #181818;
-  --tw-bg-zinc-100: #252526;
-  --tw-bg-zinc-900: #f5f5f5;
-  --tw-text-zinc-900: #cccccc;
-  --tw-text-zinc-800: #e4e4e7;
-  --tw-text-zinc-700: #d4d4d8;
-  --tw-text-zinc-600: #a1a1aa;
-  --tw-text-zinc-500: #71717a;
-  --tw-text-white: #0a0a0a;
-  --tw-border-zinc-100: #2d2d2d;
-  --tw-bg-white-90: rgba(30, 30, 30, 0.9);
-  --tw-thumb: #3c3c3c;
-  --tw-thumb-hover: #4e4e4e;
-  --tw-selection-bg: #264f78;
-  --tw-selection-text: #ffffff;
+  --tw-bg-zinc-50: #0f172a;
+  --tw-bg-zinc-100: #1e293b;
+  --tw-bg-zinc-900: #e2e8f0;
+  --tw-text-zinc-900: #f1f5f9;
+  --tw-text-zinc-800: #e2e8f0;
+  --tw-text-zinc-700: #cbd5e1;
+  --tw-text-zinc-600: #94a3b8;
+  --tw-text-zinc-500: #64748b;
+  --tw-text-white: #0f172a;
+  --tw-border-zinc-100: #1e293b;
+  --tw-bg-white-90: rgba(15, 23, 42, 0.92);
+  --tw-thumb: #334155;
+  --tw-thumb-hover: #475569;
+  --tw-selection-bg: #312e81;
+  --tw-selection-text: #e0e7ff;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5);
-  --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.6);
+  /* Chart-specific */
+  --chart-grid: #1e293b;
+  --chart-tick: #64748b;
+  --tooltip-bg: #1e293b;
+  --tooltip-border: #334155;
+
+  /* Tinted accent backgrounds for dark mode */
+  --emerald-tint: #064e3b;
+  --rose-tint: #4c0519;
+  --sky-tint: #0c4a6e;
+  --violet-tint: #2e1065;
+  --amber-tint: #451a03;
+
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.7);
   color-scheme: dark;
 }
 
@@ -181,6 +208,77 @@ textarea {
 
 ::placeholder {
   color: var(--tw-text-zinc-500) !important;
+}
+
+/* ===== Dark mode accent background overrides ===== */
+.dark .bg-emerald-50 {
+  background-color: var(--emerald-tint) !important;
+}
+
+.dark .bg-rose-50 {
+  background-color: var(--rose-tint) !important;
+}
+
+.dark .bg-sky-50 {
+  background-color: var(--sky-tint) !important;
+}
+
+.dark .bg-violet-50 {
+  background-color: var(--violet-tint) !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: var(--amber-tint) !important;
+}
+
+.dark .bg-emerald-100 {
+  background-color: rgba(6, 78, 59, 0.5) !important;
+}
+
+.dark .bg-rose-100 {
+  background-color: rgba(76, 5, 25, 0.5) !important;
+}
+
+.dark .bg-violet-100 {
+  background-color: rgba(46, 16, 101, 0.5) !important;
+}
+
+/* Dark mode text brightness boost for colored labels */
+.dark .text-emerald-600 {
+  color: #34d399 !important;
+}
+
+.dark .text-emerald-700 {
+  color: #6ee7b7 !important;
+}
+
+.dark .text-rose-600 {
+  color: #fb7185 !important;
+}
+
+.dark .text-rose-700 {
+  color: #fda4af !important;
+}
+
+.dark .text-sky-600 {
+  color: #38bdf8 !important;
+}
+
+.dark .text-violet-600 {
+  color: #a78bfa !important;
+}
+
+.dark .text-violet-900 {
+  color: #ddd6fe !important;
+}
+
+.dark .text-amber-600 {
+  color: #fbbf24 !important;
+}
+
+/* Dark mode notification dot */
+.dark .ring-white {
+  --tw-ring-color: var(--bg-card) !important;
 }
 
 /* Typography Overrides */

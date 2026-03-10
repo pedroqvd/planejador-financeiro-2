@@ -122,7 +122,8 @@ export function Sidebar() {
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="hidden md:flex flex-col w-64 h-full border-r border-zinc-200 bg-[#FCFCFA]"
+      className="hidden md:flex flex-col w-64 h-full border-r border-zinc-200"
+      style={{ backgroundColor: 'var(--bg-sidebar)' }}
     >
       <SidebarContent />
     </motion.div>
@@ -147,7 +148,8 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
             animate={{ x: 0 }}
             exit={{ x: -280 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden border-r border-zinc-200 bg-[#FCFCFA]"
+            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden border-r border-zinc-200"
+            style={{ backgroundColor: 'var(--bg-sidebar)' }}
           >
             <SidebarContent onClose={onClose} />
           </motion.div>

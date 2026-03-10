@@ -188,13 +188,21 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
       <div className="flex items-center space-x-2 sm:space-x-4">
         {/* Dark mode toggle */}
-        <button
+        <motion.button
           onClick={toggleTheme}
           className="p-2 text-zinc-500 hover:text-zinc-900 transition-colors duration-200 hover:bg-zinc-100 rounded-full"
           title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+          whileTap={{ scale: 0.9 }}
         >
-          {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-        </button>
+          <motion.div
+            key={theme}
+            initial={{ rotate: -90, opacity: 0 }}
+            animate={{ rotate: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
+            {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+          </motion.div>
+        </motion.button>
 
         {/* Notifications */}
         <div ref={notifRef} className="relative">

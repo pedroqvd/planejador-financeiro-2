@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
+import { useTheme } from '@/components/ThemeProvider';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     AreaChart, Area, LineChart, Line,
@@ -116,10 +117,10 @@ function AnimatedPieChart({ data }: { data: CategoryEntry[] }) {
         <div className="flex flex-col items-center">
             <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
                 {slices}
-                <text x={cx} y={cy - 8} textAnchor="middle" className="fill-zinc-900 text-lg font-bold" style={{ fontSize: '16px', fontWeight: 700 }}>
+                <text x={cx} y={cy - 8} textAnchor="middle" style={{ fontSize: '16px', fontWeight: 700, fill: 'var(--text-primary)' }}>
                     {formatCurrency(total)}
                 </text>
-                <text x={cx} y={cy + 12} textAnchor="middle" className="fill-zinc-400" style={{ fontSize: '10px' }}>
+                <text x={cx} y={cy + 12} textAnchor="middle" style={{ fontSize: '10px', fill: 'var(--text-secondary)' }}>
                     Total Gasto
                 </text>
             </svg>
@@ -163,7 +164,7 @@ function KPICard({ title, value, variation, icon: Icon, color, delay }: {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
         return (
-            <div className="bg-white border border-zinc-200 rounded-lg px-4 py-3 shadow-xl">
+            <div className="rounded-lg px-4 py-3 shadow-xl" style={{ backgroundColor: 'var(--tooltip-bg)', border: '1px solid var(--tooltip-border)' }}>
                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">{label}</p>
                 {payload.map((item: any) => (
                     <div key={item.dataKey} className="flex items-center space-x-2 mb-1">
@@ -181,7 +182,7 @@ const CustomBarTooltip = ({ active, payload, label }: any) => {
 const CustomLineTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
         return (
-            <div className="bg-white border border-zinc-200 rounded-lg px-4 py-3 shadow-xl">
+            <div className="rounded-lg px-4 py-3 shadow-xl" style={{ backgroundColor: 'var(--tooltip-bg)', border: '1px solid var(--tooltip-border)' }}>
                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">{label}</p>
                 <p className="text-sm font-bold text-zinc-900">{formatCurrency(payload[0].value)}</p>
             </div>
@@ -193,6 +194,12 @@ const CustomLineTooltip = ({ active, payload, label }: any) => {
 export default function RelatoriosPage() {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const { theme } = useTheme();
+
+    const gridColor = theme === 'dark' ? '#1e293b' : '#f4f4f5';
+    const tickColor = theme === 'dark' ? '#64748b' : '#a1a1aa';
+    const cursorColor = theme === 'dark' ? '#334155' : '#f4f4f5';
+    const dotStroke = theme === 'dark' ? '#1e293b' : '#fff';
 
     useEffect(() => {
         async function fetchAnalytics() {
@@ -335,10 +342,10 @@ export default function RelatoriosPage() {
                         <div className="h-[280px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={barData} margin={{ top: 5, right: 5, left: -15, bottom: 5 }} barGap={4}>
-                                    <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f4f4f5" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }} dy={8} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                                    <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#f4f4f5', radius: 4 }} />
+                                    <CartesianGrid strokeDasharray="0" vertical={false} stroke={gridColor} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11, fontWeight: 500 }} dy={8} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                                    <Tooltip content={<CustomBarTooltip />} cursor={{ fill: cursorColor, radius: 4 }} />
                                     <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={32} />
                                     <Bar dataKey="expenses" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={32} />
                                 </BarChart>
@@ -402,9 +409,9 @@ export default function RelatoriosPage() {
                                             <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="0" vertical={false} stroke="#f4f4f5" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 500 }} dy={8} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#a1a1aa', fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                                    <CartesianGrid strokeDasharray="0" vertical={false} stroke={gridColor} />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11, fontWeight: 500 }} dy={8} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: tickColor, fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                                     <Tooltip content={<CustomLineTooltip />} />
                                     <Area
                                         type="monotone"
@@ -413,8 +420,8 @@ export default function RelatoriosPage() {
                                         strokeWidth={2.5}
                                         fillOpacity={1}
                                         fill="url(#colorSaldo)"
-                                        dot={{ r: 4, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }}
-                                        activeDot={{ r: 6, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 3 }}
+                                        dot={{ r: 4, fill: '#8b5cf6', stroke: dotStroke, strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: '#8b5cf6', stroke: dotStroke, strokeWidth: 3 }}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
