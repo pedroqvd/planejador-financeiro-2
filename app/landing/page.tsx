@@ -413,7 +413,7 @@ export default function LandingPage() {
                                         <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
                                     ))}
                                 </div>
-                                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>"{t.text}"</p>
+                                <p className="text-sm leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>&quot;{t.text}&quot;</p>
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: 'var(--accent-ink)', color: '#fff' }}>
                                         {t.name.split(' ').map(n => n[0]).join('')}
