@@ -1,12 +1,13 @@
 'use client';
 
-import { Bell, Search, Menu, LogOut, X, AlertTriangle, CheckCircle, Info, Moon, Sun } from 'lucide-react';
+import { Bell, Search, Menu, LogOut, X, AlertTriangle, CheckCircle, Info, Moon, Sun, Star, Sparkles } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTheme } from '@/components/ThemeProvider';
 import Image from 'next/image';
+import { clsx } from 'clsx';
 
 type SearchResult = {
   transactions: { id: string; name: string; category: string; amount: number; type: string; date: string }[];
@@ -271,26 +272,49 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
           </AnimatePresence>
         </div>
 
-        <div className="flex items-center space-x-2 sm:space-x-4 border-l border-zinc-200 pl-2 sm:pl-4">
-          <div className="flex flex-col text-right hidden sm:block">
-            <span className="text-sm font-editorial font-bold text-zinc-900">{userName}</span>
-            <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium">
-              {plan === 'premium' ? 'Premium' : plan === 'pro' ? 'Pro' : 'Free'}
-            </span>
+        <div className="flex items-center space-x-3 sm:space-x-5 border-l border-zinc-200 dark:border-zinc-800 pl-3 sm:pl-5">
+          <div className="flex flex-col text-right hidden sm:flex">
+            <span className="text-sm font-editorial font-bold text-zinc-900 dark:text-zinc-100">{userName}</span>
+            <div className="flex justify-end mt-0.5">
+              {plan === 'premium' ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 shadow-sm">
+                  <Star className="w-2 h-2 mr-1 fill-current" />
+                  Premium
+                </span>
+              ) : plan === 'pro' ? (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
+                  <Sparkles className="w-2 h-2 mr-1 fill-current" />
+                  Pro
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
+                  Free
+                </span>
+              )}
+            </div>
           </div>
-          <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-zinc-200 bg-zinc-50 flex items-center justify-center">
-            {session?.user?.image ? (
-              <Image src={session.user.image} alt={userName} fill className="object-cover" />
-            ) : (
-              <span className="text-xs font-bold font-editorial text-zinc-900">{initials}</span>
-            )}
+
+          <div className={clsx(
+            "relative p-0.5 rounded-full",
+            plan === 'premium' ? "bg-gradient-to-tr from-amber-400 to-amber-200 shadow-sm" :
+              plan === 'pro' ? "bg-gradient-to-tr from-indigo-400 to-indigo-200 shadow-sm" :
+                "bg-zinc-200 dark:bg-zinc-700"
+          )}>
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center">
+              {session?.user?.image ? (
+                <Image src={session.user.image} alt={userName} fill className="object-cover" />
+              ) : (
+                <span className="text-sm font-bold font-editorial text-zinc-900 dark:text-zinc-100">{initials}</span>
+              )}
+            </div>
           </div>
+
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="p-2 text-zinc-400 hover:text-zinc-900 rounded-full hover:bg-zinc-100 transition-all duration-200 hidden sm:block"
+            className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-all duration-200 hidden sm:block"
             title="Sair"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-[18px] h-[18px]" />
           </button>
         </div>
       </div>
