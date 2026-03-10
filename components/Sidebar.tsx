@@ -10,7 +10,8 @@ import {
   LogOut,
   Sparkles,
   X,
-  CreditCard
+  CreditCard,
+  BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,6 +24,7 @@ const navItems = [
   { name: 'Transações', href: '/transactions', icon: ArrowLeftRight },
   { name: 'Faturas', href: '/faturas', icon: CreditCard },
   { name: 'Orçamento', href: '/budget', icon: Wallet },
+  { name: 'Relatórios', href: '/relatorios', icon: BarChart3 },
   { name: 'Investimentos', href: '/investments', icon: PieChart },
   { name: 'Objetivos', href: '/goals', icon: Target },
   { name: 'Plano Pro ✨', href: '/upgrade', icon: Sparkles },
