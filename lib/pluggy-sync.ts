@@ -37,6 +37,8 @@ export async function syncPluggyTransactions(
                     .map(tx => {
                         const type = tx.type === 'CREDIT' ? 'income' : 'expense';
                         const amount = Math.abs(tx.amount || 0);
+                        const paymentMethod = account.type === 'CREDIT' ? 'credit_card' : 'account';
+
                         return prisma.transaction.upsert({
                             where: { pluggyTransactionId: tx.id },
                             update: {
@@ -44,6 +46,7 @@ export async function syncPluggyTransactions(
                                 category: tx.category || 'Outros',
                                 amount,
                                 type,
+                                paymentMethod,
                                 date: new Date(tx.date),
                             },
                             create: {
@@ -53,6 +56,8 @@ export async function syncPluggyTransactions(
                                 category: tx.category || 'Outros',
                                 amount,
                                 type,
+                                paymentMethod,
+                                installments: 1,
                                 date: new Date(tx.date),
                             }
                         });

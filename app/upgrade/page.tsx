@@ -4,8 +4,6 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { motion } from 'motion/react';
 import { Check, Sparkles, Loader2, Star, Zap } from 'lucide-react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import confetti from 'canvas-confetti';
 import { useSession } from 'next-auth/react';
 
 const features = [
@@ -20,7 +18,6 @@ const features = [
 export default function UpgradePage() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const router = useRouter();
     const { data: session, update } = useSession();
 
     const isAlreadyPro = session?.user?.plan === 'pro' || session?.user?.plan === 'premium';

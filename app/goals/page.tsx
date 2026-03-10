@@ -5,7 +5,8 @@ import { Plus, Plane, Shield, Car, Target, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
-import confetti from 'canvas-confetti';
+// Dynamic import to avoid SSR crash during build
+const confetti = typeof window !== 'undefined' ? require('canvas-confetti') : null;
 
 type Goal = {
   id: string;

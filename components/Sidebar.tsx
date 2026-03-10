@@ -21,6 +21,7 @@ import { signOut } from 'next-auth/react';
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Transações', href: '/transactions', icon: ArrowLeftRight },
+  { name: 'Faturas', href: '/faturas', icon: CreditCard },
   { name: 'Orçamento', href: '/budget', icon: Wallet },
   { name: 'Investimentos', href: '/investments', icon: PieChart },
   { name: 'Objetivos', href: '/goals', icon: Target },

@@ -40,7 +40,9 @@ model Transaction {
   name     String
   category String
   amount   Float
-  type     String
+  type                String
+  paymentMethod       String   @default("account") // account, credit_card
+  installments        Int      @default(1)
   date                DateTime @default(now())
   userId              String
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -1,142 +1,90 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { DashboardOverview } from '@/components/DashboardOverview';
-import { Charts } from '@/components/Charts';
-import { Transactions } from '@/components/Transactions';
+import { RecentTransactions } from '@/components/RecentTransactions';
 import { BudgetProgress } from '@/components/BudgetProgress';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
-import { ImportModal } from '@/components/ImportModal';
-import { ReferralCard } from '@/components/ReferralCard';
-import { useSession } from 'next-auth/react';
-import React, { useState, useEffect } from 'react';
+import { SmartBudgetModal } from '@/components/SmartBudgetModal';
+import {
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  PiggyBank,
+  Upload,
+  Sparkles,
+  Bot
+} from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Upload, Sparkles, X, Wallet, PiggyBank } from 'lucide-react';
+import { clsx } from 'clsx';
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Bom dia';
-  if (hour < 18) return 'Boa tarde';
-  return 'Boa noite';
-}
+type DashboardData = {
+  stats: {
+    netWorth: number;
+    income: number;
+    expenses: number;
+    investments: number;
+  };
+  recentTransactions: any[];
+  budgets: any[];
+};
 
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-type DashboardData = {
-  stats: { netWorth: number; income: number; expenses: number; investments: number };
-  chartData: { name: string; receitas: number; despesas: number }[];
-  budgets?: { id: string; category: string; limit: number; spent: number; month: string }[];
-  referral?: { referralCode: string; referralsCount: number };
-};
-
-type Transaction = {
-  id: string;
-  name: string;
-  category: string;
-  amount: number;
-  type: string;
-  date: string;
-};
-
-export default function Home() {
+export default function Dashboard() {
   const { data: session } = useSession();
-  const firstName = session?.user?.name?.split(' ')[0] || 'Usuário';
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showSmartBudgetModal, setShowSmartBudgetModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [coachInsight, setCoachInsight] = useState<{ title: string; message: string; type: string; } | null>(null);
+  const [showAiCoach, setShowAiCoach] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function fetchData() {
+    async function fetchDashboard() {
       try {
-        const [dashRes, transRes] = await Promise.all([
-          fetch('/api/dashboard'),
-          fetch('/api/transactions'),
-        ]);
-
-        let dashData = null;
-        let transData: Transaction[] = [];
-
-        if (dashRes.ok) dashData = await dashRes.json();
-        if (transRes.ok) {
-          const res = await transRes.json();
-          transData = Array.isArray(res) ? res : res.transactions || [];
+        const res = await fetch('/api/dashboard');
+        if (res.ok) {
+          const data = await res.json();
+          setDashboard(data);
         }
-
-        if (mounted) {
-          setDashboard(dashData);
-          setTransactions(transData);
-        }
-      } catch (err) {
-        console.error('Failed to load dashboard data:', err);
+      } catch (error) {
+        console.error('Error fetching dashboard:', error);
+      } finally {
+        setLoading(false);
       }
     }
+    fetchDashboard();
+  }, []);
 
-    fetchData();
+  useEffect(() => {
+    const timer = setTimeout(() => setShowAiCoach(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
-    // AI Coach Background Trigger (debounced 36h)
-    const lastCoachCall = localStorage.getItem('wealthcash_last_coach');
-    const now = Date.now();
-    const thirtySixHours = 36 * 60 * 60 * 1000;
+  const firstName = session?.user?.name?.split(' ')[0] || 'usuário';
 
-    if (!lastCoachCall || now - parseInt(lastCoachCall) > thirtySixHours) {
-      if (session?.user?.plan === 'pro' || session?.user?.plan === 'premium') {
-        const triggerCoach = async () => {
-          try {
-            const aiRes = await fetch('/api/ai/coach');
-            if (aiRes.ok) {
-              const insight = await aiRes.json();
-              if (insight?.title && insight?.message) {
-                setCoachInsight(insight);
-                localStorage.setItem('wealthcash_last_coach', now.toString());
-                await fetch('/api/notifications/ai', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(insight)
-                });
-                setTimeout(() => setCoachInsight(null), 8000);
-              }
-            }
-          } catch (e) {
-            console.error('Coach silent trigger failed:', e);
-          }
-        };
-        const coachTimeout = setTimeout(triggerCoach, 3000);
-        return () => { clearTimeout(coachTimeout); mounted = false; };
-      }
-    }
-
-    return () => { mounted = false; };
-  }, [session?.user?.plan]);
-
-  const refreshData = () => {
-    Promise.all([
-      fetch('/api/dashboard'),
-      fetch('/api/transactions'),
-    ]).then(async ([dashRes, transRes]) => {
-      if (dashRes.ok) setDashboard(await dashRes.json());
-      if (transRes.ok) {
-        const res = await transRes.json();
-        setTransactions(Array.isArray(res) ? res : res.transactions || []);
-      }
-    });
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-5">
+      <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ─── Header: Greeting + Actions ─── */}
+        {/* Header Section */}
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div>
             <h1 className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">
@@ -147,6 +95,13 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-3">
+            <button
+              onClick={() => setShowSmartBudgetModal(true)}
+              className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold uppercase tracking-wider hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Sugerir com IA</span>
+            </button>
             <button
               onClick={() => setShowImportModal(true)}
               className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 text-xs font-medium text-zinc-700 uppercase tracking-wider hover:bg-zinc-50 transition-all duration-200"
@@ -164,129 +119,141 @@ export default function Home() {
           </div>
         </motion.div>
 
-        {/* ─── Zone 1: Hero KPIs (Receitas, Despesas, Saldo + Health Bar) ─── */}
+        {/* Top Overview Cards */}
         <DashboardOverview stats={dashboard?.stats || null} />
 
-        {/* ─── Zone 2: Chart + Budgets (side by side) ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          <div className="lg:col-span-3">
-            <Charts data={dashboard?.chartData || []} loading={!dashboard} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Main Content (Transactions) */}
+          <div className="lg:col-span-2 space-y-4">
+            <RecentTransactions transactions={dashboard?.recentTransactions || []} loading={loading} />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Patrimônio Líquido */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+                className="bg-white border border-zinc-200 rounded-xl p-5 hover:shadow-md hover:border-zinc-300 transition-all duration-300 group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 rounded-lg flex items-center justify-center group-hover:from-sky-50 group-hover:to-sky-100 transition-all duration-300">
+                    <Wallet className="w-[18px] h-[18px] text-zinc-500 group-hover:text-sky-600 transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
+                      Patrimônio Líquido
+                    </p>
+                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
+                      {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth) : '—'}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Investimentos */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.4 }}
+                className="bg-white border border-zinc-200 rounded-xl p-5 hover:shadow-md hover:border-zinc-300 transition-all duration-300 group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 rounded-lg flex items-center justify-center group-hover:from-emerald-50 group-hover:to-emerald-100 transition-all duration-300">
+                    <PiggyBank className="w-[18px] h-[18px] text-zinc-500 group-hover:text-emerald-600 transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
+                      Investimentos
+                    </p>
+                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
+                      {dashboard?.stats ? formatCurrency(dashboard.stats.investments) : '—'}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
-          <div className="lg:col-span-2">
-            <BudgetProgress budgets={dashboard?.budgets || []} />
-          </div>
-        </div>
 
-        {/* ─── Zone 3: Transactions + Secondary Cards ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {/* Recent Transactions (primary) */}
-          <div className="lg:col-span-3">
-            <Transactions data={transactions} limit={5} />
-          </div>
+          {/* Sidebar Area (Budgets) */}
+          <div className="space-y-4">
+            <BudgetProgress budgets={dashboard?.budgets || []} loading={loading} />
 
-          {/* Secondary Cards: Patrimônio + Investimentos + Referral */}
-          <div className="lg:col-span-2 space-y-3">
-            {/* Patrimônio Líquido */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-              className="bg-white border border-zinc-200 p-5 hover:bg-zinc-50/80 transition-colors duration-300"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 bg-zinc-100 flex items-center justify-center">
-                  <Wallet className="w-[18px] h-[18px] text-zinc-500" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
-                    Patrimônio Líquido
-                  </p>
-                  <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
-                    {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth) : '—'}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Investimentos */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.55, duration: 0.4 }}
-              className="bg-white border border-zinc-200 p-5 hover:bg-zinc-50/80 transition-colors duration-300"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 bg-zinc-100 flex items-center justify-center">
-                  <PiggyBank className="w-[18px] h-[18px] text-zinc-500" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
-                    Investimentos
-                  </p>
-                  <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
-                    {dashboard?.stats ? formatCurrency(dashboard.stats.investments) : '—'}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Referral Card */}
-            {dashboard?.referral && (
-              <ReferralCard code={dashboard.referral.referralCode} count={dashboard.referral.referralsCount} />
-            )}
+            {/* AI Coach Card */}
+            <AnimatePresence>
+              {showAiCoach && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-gradient-to-br from-indigo-900 via-zinc-900 to-black text-white p-6 rounded-xl relative overflow-hidden shadow-xl"
+                >
+                  <div className="absolute top-0 right-0 p-1">
+                    <button onClick={() => setShowAiCoach(false)} className="text-white/30 hover:text-white/60">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="relative z-10">
+                    <div className="flex items-center space-x-2 mb-3">
+                      <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                        <Bot className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-400">Cash IA Coach</span>
+                    </div>
+                    <p className="text-sm font-medium leading-relaxed">
+                      "Você gastou 15% menos em lazer esta semana. Que tal direcionar esse valor para sua reserva de emergência?"
+                    </p>
+                    <button className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all">
+                      Consultar IA
+                    </button>
+                  </div>
+                  <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
 
-      {/* ─── Modals ─── */}
-      {showAddModal && (
-        <AddTransactionModal
-          onClose={() => setShowAddModal(false)}
-          onSuccess={() => { setShowAddModal(false); refreshData(); }}
-        />
-      )}
-
-      {showImportModal && (
-        <ImportModal
-          onClose={() => setShowImportModal(false)}
-          onSuccess={() => { setShowImportModal(false); refreshData(); }}
-        />
-      )}
-
-      {/* ─── AI Coach Toast ─── */}
       <AnimatePresence>
-        {coachInsight && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, x: '50%' }}
-            animate={{ opacity: 1, y: 0, x: '0%' }}
-            exit={{ opacity: 0, scale: 0.9, x: '10%' }}
-            className="fixed bottom-24 right-6 w-80 bg-zinc-900 border border-zinc-800 text-white shadow-2xl z-50 overflow-hidden"
-          >
-            <div className={`h-1 w-full absolute top-0 left-0 ${coachInsight.type === 'warning' ? 'bg-rose-500' :
-                coachInsight.type === 'success' ? 'bg-emerald-500' : 'bg-sky-500'
-              }`} />
-            <div className="p-5">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                  </div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-100">{coachInsight.title}</h4>
-                </div>
-                <button onClick={() => setCoachInsight(null)} className="text-zinc-500 hover:text-white transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-sm text-zinc-300 leading-relaxed mt-3">
-                {coachInsight.message}
-              </p>
-            </div>
-            <div className="px-5 py-3 bg-white/5 border-t border-white/5">
-              <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-medium">Coach Ativo</span>
-            </div>
-          </motion.div>
+        {showAddModal && (
+          <AddTransactionModal
+            onClose={() => setShowAddModal(false)}
+            onSuccess={() => {
+              setShowAddModal(false);
+              window.location.reload();
+            }}
+          />
+        )}
+        {showSmartBudgetModal && (
+          <SmartBudgetModal
+            onClose={() => setShowSmartBudgetModal(false)}
+            onSuccess={() => {
+              setShowSmartBudgetModal(false);
+              window.location.reload();
+            }}
+          />
         )}
       </AnimatePresence>
     </DashboardLayout>
+  );
+}
+
+function X({ className }: { className: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+    </svg>
   );
 }

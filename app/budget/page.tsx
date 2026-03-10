@@ -2,7 +2,8 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { EditBudgetModal } from '@/components/EditBudgetModal';
-import { Plus, Home, ShoppingCart, Car, Coffee, Wallet, Pencil } from 'lucide-react';
+import { SmartBudgetModal } from '@/components/SmartBudgetModal';
+import { Plus, Home, ShoppingCart, Car, Coffee, Wallet, Pencil, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
@@ -27,6 +28,7 @@ export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showSmartModal, setShowSmartModal] = useState(false);
   const [editBudget, setEditBudget] = useState<Budget | null>(null);
 
   const loadBudgets = useCallback(async () => {
@@ -62,13 +64,22 @@ export default function BudgetPage() {
             <h1 className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">Orçamento</h1>
             <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Gerencie seus limites de gastos por categoria</p>
           </div>
-          <button
-            onClick={() => { setEditBudget(null); setShowModal(true); }}
-            className="flex items-center space-x-2 px-4 py-2.5 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nova Categoria</span>
-          </button>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowSmartModal(true)}
+              className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider hover:bg-indigo-100 transition-all rounded-md"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">Sugerir com IA</span>
+            </button>
+            <button
+              onClick={() => { setEditBudget(null); setShowModal(true); }}
+              className="flex items-center space-x-2 px-4 py-2.5 bg-zinc-900 border border-transparent text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all rounded-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nova Categoria</span>
+            </button>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -211,6 +222,13 @@ export default function BudgetPage() {
           onClose={() => { setShowModal(false); setEditBudget(null); }}
           onSuccess={() => { setShowModal(false); setEditBudget(null); loadBudgets(); }}
           budget={editBudget}
+        />
+      )}
+
+      {showSmartModal && (
+        <SmartBudgetModal
+          onClose={() => setShowSmartModal(false)}
+          onSuccess={() => { setShowSmartModal(false); loadBudgets(); }}
         />
       )}
     </DashboardLayout>

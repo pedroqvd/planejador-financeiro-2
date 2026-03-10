@@ -83,6 +83,8 @@ export async function POST(request: Request) {
         const category = sanitize(String(body.category || ''));
         const amount = parseFloat(body.amount);
         const type = String(body.type || '');
+        const paymentMethod = String(body.paymentMethod || 'account');
+        const installments = parseInt(body.installments || '1');
 
         if (!name || !category) {
             return NextResponse.json({ error: 'Nome e categoria são obrigatórios.' }, { status: 400 });
@@ -100,31 +102,66 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Valor deve ser entre R$ 0,01 e R$ 99.999.999.' }, { status: 400 });
         }
 
-        const transaction = await prisma.transaction.create({
-            data: {
+        const txsToCreate = [];
+        const baseDate = new Date();
+
+        if (paymentMethod === 'credit_card' && installments > 1 && type === 'expense') {
+            const installmentAmount = Number((amount / installments).toFixed(2));
+            for (let i = 0; i < installments; i++) {
+                const txDate = new Date(baseDate);
+                txDate.setMonth(txDate.getMonth() + i);
+
+                // Adjust name for installments: e.g. "iPhone 14 (1/12)"
+                const installName = `${name} (${i + 1}/${installments})`;
+
+                txsToCreate.push({
+                    name: installName,
+                    category,
+                    amount: i === installments - 1
+                        ? Number((amount - installmentAmount * (installments - 1)).toFixed(2)) // Fix rounding on last parcell
+                        : installmentAmount,
+                    type,
+                    paymentMethod,
+                    installments,
+                    userId: session.user.id,
+                    date: txDate,
+                });
+            }
+        } else {
+            txsToCreate.push({
                 name,
                 category,
                 amount,
                 type,
+                paymentMethod,
+                installments: 1,
                 userId: session.user.id,
-            },
-        });
-
-        if (type === 'expense') {
-            const currentMonth = new Date().toISOString().slice(0, 7);
-            await prisma.budget.updateMany({
-                where: {
-                    userId: session.user.id,
-                    category,
-                    month: currentMonth,
-                },
-                data: {
-                    spent: { increment: amount },
-                },
+                date: baseDate,
             });
         }
 
-        return NextResponse.json(transaction, { status: 201 });
+        const createdTxs = await prisma.$transaction(
+            txsToCreate.map(tx => prisma.transaction.create({ data: tx }))
+        );
+
+        if (type === 'expense') {
+            // Update budgets for all created months
+            for (const tx of createdTxs) {
+                const currentMonth = tx.date.toISOString().slice(0, 7);
+                await prisma.budget.updateMany({
+                    where: {
+                        userId: session.user.id,
+                        category: tx.category,
+                        month: currentMonth,
+                    },
+                    data: {
+                        spent: { increment: tx.amount },
+                    },
+                });
+            }
+        }
+
+        return NextResponse.json(createdTxs[0], { status: 201 });
     } catch (error) {
         console.error('Transaction error:', error);
         return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });
