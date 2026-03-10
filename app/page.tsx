@@ -39,6 +39,7 @@ function formatCurrency(value: number) {
 export default function Dashboard() {
   const { data: session } = useSession();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [aiInsight, setAiInsight] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSmartBudgetModal, setShowSmartBudgetModal] = useState(false);
@@ -46,26 +47,31 @@ export default function Dashboard() {
   const [showAiCoach, setShowAiCoach] = useState(false);
 
   useEffect(() => {
-    async function fetchDashboard() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/dashboard');
-        if (res.ok) {
-          const data = await res.json();
-          setDashboard(data);
-        }
+        const [dashRes, aiRes] = await Promise.all([
+          fetch('/api/dashboard'),
+          fetch('/api/ai/coach')
+        ]);
+
+        if (dashRes.ok) setDashboard(await dashRes.json());
+        if (aiRes.ok) setAiInsight(await aiRes.json());
       } catch (error) {
-        console.error('Error fetching dashboard:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchDashboard();
+    fetchData();
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowAiCoach(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    // Only show coach if we have an insight and plan is not free
+    if (aiInsight && !aiInsight.error) {
+      const timer = setTimeout(() => setShowAiCoach(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [aiInsight]);
 
   const firstName = session?.user?.name?.split(' ')[0] || 'usuário';
 
@@ -75,6 +81,39 @@ export default function Dashboard() {
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
+          <div className="flex justify-between items-end">
+            <div className="space-y-2">
+              <div className="h-8 bg-zinc-100 dark:bg-zinc-800 w-48 rounded-lg" />
+              <div className="h-3 bg-zinc-50 dark:bg-zinc-900 w-64 rounded-lg" />
+            </div>
+            <div className="flex space-x-2">
+              <div className="h-10 bg-zinc-100 dark:bg-zinc-800 w-32 rounded-lg" />
+              <div className="h-10 bg-zinc-100 dark:bg-zinc-800 w-32 rounded-lg hidden sm:block" />
+            </div>
+          </div>
+          <DashboardOverview stats={null} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="h-80 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="h-28 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+                <div className="h-28 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="h-64 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl" />
+              <div className="h-48 bg-zinc-900 dark:bg-zinc-800 border border-zinc-800 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -87,31 +126,36 @@ export default function Dashboard() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">
+            <h1 className="text-2xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
               {getGreeting()}, {firstName}
             </h1>
-            <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider">
               Resumo do seu planejamento financeiro
             </p>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-3">
             <button
               onClick={() => setShowSmartBudgetModal(true)}
-              className="flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold uppercase tracking-wider hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20"
+              className="group relative flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold uppercase tracking-wider hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20 overflow-hidden"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Sugerir com IA</span>
+              <motion.div
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                className="absolute inset-0 w-12 bg-white/20 -skew-x-12"
+              />
+              <Sparkles className="w-4 h-4 relative z-10" />
+              <span className="relative z-10">Sugerir com IA</span>
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 text-xs font-medium text-zinc-700 uppercase tracking-wider hover:bg-zinc-50 transition-all duration-200"
+              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-200 rounded-none"
             >
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Importar</span>
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200"
+              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 dark:hover:bg-white transition-all duration-200 rounded-none shadow-xl"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nova Transação</span>
@@ -120,7 +164,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Top Overview Cards */}
-        <DashboardOverview stats={dashboard?.stats || null} />
+        <DashboardOverview stats={dashboard?.stats || null} chartData={(dashboard as any)?.chartData} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -134,17 +178,17 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.4 }}
-                className="bg-white border border-zinc-200 rounded-xl p-5 hover:shadow-md hover:border-zinc-300 transition-all duration-300 group"
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md dark:hover:border-zinc-700 transition-all duration-300 group"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 rounded-lg flex items-center justify-center group-hover:from-sky-50 group-hover:to-sky-100 transition-all duration-300">
-                    <Wallet className="w-[18px] h-[18px] text-zinc-500 group-hover:text-sky-600 transition-colors" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900 rounded-lg flex items-center justify-center group-hover:from-sky-50 group-hover:to-sky-100 dark:group-hover:from-sky-900/30 dark:group-hover:to-sky-800/30 transition-all duration-300">
+                    <Wallet className="w-[18px] h-[18px] text-zinc-500 dark:text-zinc-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors" />
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
+                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400 dark:text-zinc-500">
                       Patrimônio Líquido
                     </p>
-                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
+                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
                       {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth) : '—'}
                     </p>
                   </div>
@@ -156,17 +200,17 @@ export default function Dashboard() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55, duration: 0.4 }}
-                className="bg-white border border-zinc-200 rounded-xl p-5 hover:shadow-md hover:border-zinc-300 transition-all duration-300 group"
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md dark:hover:border-zinc-700 transition-all duration-300 group"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 rounded-lg flex items-center justify-center group-hover:from-emerald-50 group-hover:to-emerald-100 transition-all duration-300">
-                    <PiggyBank className="w-[18px] h-[18px] text-zinc-500 group-hover:text-emerald-600 transition-colors" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900 rounded-lg flex items-center justify-center group-hover:from-emerald-50 group-hover:to-emerald-100 dark:group-hover:from-emerald-900/30 dark:group-hover:to-emerald-800/30 transition-all duration-300">
+                    <PiggyBank className="w-[18px] h-[18px] text-zinc-500 dark:text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
                   </div>
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">
+                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400 dark:text-zinc-500">
                       Investimentos
                     </p>
-                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 mt-0.5">
+                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
                       {dashboard?.stats ? formatCurrency(dashboard.stats.investments) : '—'}
                     </p>
                   </div>
@@ -186,28 +230,60 @@ export default function Dashboard() {
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                  className="bg-gradient-to-br from-indigo-900 via-zinc-900 to-black text-white p-6 rounded-xl relative overflow-hidden shadow-xl"
+                  className={clsx(
+                    "p-6 rounded-xl relative overflow-hidden shadow-xl border",
+                    aiInsight?.type === 'warning'
+                      ? "bg-gradient-to-br from-amber-900 via-zinc-900 to-black border-amber-500/20"
+                      : aiInsight?.type === 'success'
+                        ? "bg-gradient-to-br from-emerald-900 via-zinc-900 to-black border-emerald-500/20"
+                        : "bg-gradient-to-br from-indigo-900 via-zinc-900 to-black border-indigo-500/20"
+                  )}
                 >
                   <div className="absolute top-0 right-0 p-1">
-                    <button onClick={() => setShowAiCoach(false)} className="text-white/30 hover:text-white/60">
+                    <button onClick={() => setShowAiCoach(false)} className="text-white/30 hover:text-white/60 p-2">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="relative z-10">
                     <div className="flex items-center space-x-2 mb-3">
-                      <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                      <div className={clsx(
+                        "w-8 h-8 rounded-full flex items-center justify-center shadow-lg",
+                        aiInsight?.type === 'warning' ? "bg-amber-500 shadow-amber-500/30" :
+                          aiInsight?.type === 'success' ? "bg-emerald-500 shadow-emerald-500/30" :
+                            "bg-indigo-500 shadow-indigo-500/30"
+                      )}>
                         <Bot className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-400">Cash IA Coach</span>
+                      <span className={clsx(
+                        "text-[10px] uppercase tracking-[0.2em] font-bold",
+                        aiInsight?.type === 'warning' ? "text-amber-400" :
+                          aiInsight?.type === 'success' ? "text-emerald-400" :
+                            "text-indigo-400"
+                      )}>
+                        {aiInsight?.title || "Cash IA Coach"}
+                      </span>
                     </div>
-                    <p className="text-sm font-medium leading-relaxed">
-                      &quot;Você gastou 15% menos em lazer esta semana. Que tal direcionar esse valor para sua reserva de emergência?&quot;
+                    <p className="text-sm font-medium leading-relaxed text-zinc-100">
+                      &quot;{aiInsight?.message}&quot;
                     </p>
-                    <button className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all">
+                    {aiInsight?.actionableAdvice && (
+                      <p className="text-[11px] text-zinc-400 mt-2 italic font-serif">
+                        {aiInsight.actionableAdvice}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => (window as any).openChat?.()}
+                      className="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                    >
                       Consultar IA
                     </button>
                   </div>
-                  <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
+                  <div className={clsx(
+                    "absolute -right-10 -bottom-10 w-32 h-32 rounded-full blur-3xl opacity-20",
+                    aiInsight?.type === 'warning' ? "bg-amber-500" :
+                      aiInsight?.type === 'success' ? "bg-emerald-500" :
+                        "bg-indigo-500"
+                  )} />
                 </motion.div>
               )}
             </AnimatePresence>

@@ -133,8 +133,7 @@ export function Sidebar() {
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="hidden md:flex flex-col w-64 h-full border-r border-zinc-200"
-      style={{ backgroundColor: 'var(--bg-sidebar)' }}
+      className="hidden md:flex flex-col w-64 h-full border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl bg-white/80 dark:bg-black/80"
     >
       <SidebarContent />
     </motion.div>
@@ -151,7 +150,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-zinc-900/20 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-zinc-900/40 backdrop-blur-md md:hidden"
             onClick={onClose}
           />
           <motion.div
@@ -159,8 +158,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
             animate={{ x: 0 }}
             exit={{ x: -280 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden border-r border-zinc-200"
-            style={{ backgroundColor: 'var(--bg-sidebar)' }}
+            className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col md:hidden border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl bg-white/90 dark:bg-zinc-950/90 shadow-2xl"
           >
             <SidebarContent onClose={onClose} />
           </motion.div>

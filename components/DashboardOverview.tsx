@@ -11,6 +11,12 @@ type Stats = {
   investments: number;
 } | null;
 
+type ChartData = {
+  name: string;
+  receitas: number;
+  despesas: number;
+}[];
+
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -22,23 +28,50 @@ function formatCompact(value: number) {
   return formatCurrency(value);
 }
 
-export function DashboardOverview({ stats }: { stats: Stats }) {
+function Sparkline({ data, color }: { data: number[], color: string }) {
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const height = 32;
+  const width = 80;
+
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  );
+}
+
+export function DashboardOverview({ stats, chartData }: { stats: Stats; chartData?: ChartData }) {
   if (!stats) {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white border border-zinc-200 p-6 animate-pulse">
-              <div className="w-8 h-8 bg-zinc-100" />
+            <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 animate-pulse">
+              <div className="w-8 h-8 bg-zinc-100 dark:bg-zinc-800" />
               <div className="mt-4 space-y-2">
-                <div className="h-3 bg-zinc-100 w-20" />
-                <div className="h-8 bg-zinc-100 w-36" />
+                <div className="h-3 bg-zinc-100 dark:bg-zinc-800 w-20" />
+                <div className="h-8 bg-zinc-100 dark:bg-zinc-800 w-36" />
               </div>
             </div>
           ))}
         </div>
-        <div className="bg-white border border-zinc-200 p-4 animate-pulse">
-          <div className="h-2 bg-zinc-100 w-full" />
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 animate-pulse">
+          <div className="h-2 bg-zinc-100 dark:bg-zinc-800 w-full" />
         </div>
       </div>
     );
@@ -52,37 +85,44 @@ export function DashboardOverview({ stats }: { stats: Stats }) {
     ? Math.round(((stats.income - stats.expenses) / stats.income) * 100)
     : 0;
 
+  const incomeTrend = chartData?.map(d => d.receitas) || [0, 0, 0, 0, 0, 0];
+  const expenseTrend = chartData?.map(d => d.despesas) || [0, 0, 0, 0, 0, 0];
+
   const heroCards = [
     {
       name: 'Receitas do mês',
       value: formatCurrency(stats.income),
       icon: TrendingUp,
       accent: 'emerald',
-      bgClass: 'bg-white hover:bg-emerald-50/50',
-      iconBg: 'bg-emerald-50',
-      iconColor: 'text-emerald-600',
-      valueColor: 'text-emerald-700',
-      labelColor: 'text-zinc-500',
+      bgClass: 'bg-white dark:bg-zinc-900 hover:bg-emerald-50/50 dark:hover:bg-emerald-500/5',
+      iconBg: 'bg-emerald-50 dark:bg-emerald-500/20',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      valueColor: 'text-emerald-700 dark:text-emerald-400',
+      labelColor: 'text-zinc-500 dark:text-zinc-400',
+      trend: incomeTrend,
+      trendColor: '#10b981',
     },
     {
       name: 'Despesas do mês',
       value: formatCurrency(stats.expenses),
       icon: TrendingDown,
       accent: 'rose',
-      bgClass: 'bg-white hover:bg-rose-50/50',
-      iconBg: 'bg-rose-50',
-      iconColor: 'text-rose-500',
-      valueColor: 'text-rose-600',
-      labelColor: 'text-zinc-500',
+      bgClass: 'bg-white dark:bg-zinc-900 hover:bg-rose-50/50 dark:hover:bg-rose-500/5',
+      iconBg: 'bg-rose-50 dark:bg-rose-500/20',
+      iconColor: 'text-rose-500 dark:text-rose-400',
+      valueColor: 'text-rose-600 dark:text-rose-400',
+      labelColor: 'text-zinc-500 dark:text-zinc-400',
+      trend: expenseTrend,
+      trendColor: '#f43f5e',
     },
     {
       name: 'Saldo do mês',
       value: formatCurrency(balance),
       icon: Scale,
       accent: 'dark',
-      bgClass: 'bg-zinc-900 hover:bg-zinc-800',
-      iconBg: 'bg-white/10',
-      iconColor: 'text-white/80',
+      bgClass: 'bg-zinc-900 dark:bg-black hover:bg-zinc-800 dark:hover:bg-zinc-950',
+      iconBg: 'bg-white/10 dark:bg-zinc-800',
+      iconColor: 'text-white/80 dark:text-zinc-400',
       valueColor: 'text-white',
       labelColor: 'text-zinc-400',
       extra: savingsPercent > 0
@@ -102,16 +142,16 @@ export function DashboardOverview({ stats }: { stats: Stats }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.08, duration: 0.4, ease: 'easeOut' }}
             className={clsx(
-              'p-5 border border-zinc-200 transition-all duration-300 cursor-default group',
+              'p-5 border border-zinc-200 dark:border-zinc-800 transition-all duration-300 cursor-default group',
               card.bgClass,
-              card.accent === 'dark' && 'border-zinc-800'
+              card.accent === 'dark' && 'dark:border-zinc-700'
             )}
           >
             <div className="flex items-center justify-between">
               <div className={clsx('w-9 h-9 flex items-center justify-center', card.iconBg)}>
                 <card.icon className={clsx('w-[18px] h-[18px]', card.iconColor)} />
               </div>
-              {card.extra && (
+              {card.extra ? (
                 <span className={clsx(
                   'text-[10px] font-semibold uppercase tracking-widest px-2 py-1',
                   balance >= 0
@@ -120,6 +160,10 @@ export function DashboardOverview({ stats }: { stats: Stats }) {
                 )}>
                   {card.extra}
                 </span>
+              ) : card.trend && (
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-1">
+                  <Sparkline data={card.trend} color={card.trendColor} />
+                </div>
               )}
             </div>
             <div className="mt-4">
@@ -144,22 +188,22 @@ export function DashboardOverview({ stats }: { stats: Stats }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35, duration: 0.4 }}
-        className="bg-white border border-zinc-200 px-5 py-4"
+        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-5 py-4"
       >
         <div className="flex items-center justify-between mb-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             Saúde Financeira
           </span>
           <span className={clsx(
             'text-[11px] font-bold uppercase tracking-wider',
-            healthPercent <= 60 ? 'text-emerald-600' :
-              healthPercent <= 80 ? 'text-amber-600' :
-                'text-rose-600'
+            healthPercent <= 60 ? 'text-emerald-600 dark:text-emerald-400' :
+              healthPercent <= 80 ? 'text-amber-600 dark:text-amber-400' :
+                'text-rose-600 dark:text-rose-400'
           )}>
             {healthPercent}% utilizado
           </span>
         </div>
-        <div className="h-2 w-full bg-zinc-100 overflow-hidden">
+        <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${healthPercent}%` }}
@@ -173,10 +217,10 @@ export function DashboardOverview({ stats }: { stats: Stats }) {
           />
         </div>
         <div className="flex items-center justify-between mt-2">
-          <span className="text-[10px] text-zinc-400 tracking-wider">
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 tracking-wider">
             Receita: {formatCompact(stats.income)}
           </span>
-          <span className="text-[10px] text-zinc-400 tracking-wider">
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 tracking-wider">
             Restante: {formatCompact(Math.max(0, balance))}
           </span>
         </div>

@@ -277,14 +277,24 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
             <span className="text-sm font-editorial font-bold text-zinc-900 dark:text-zinc-100">{userName}</span>
             <div className="flex justify-end mt-0.5">
               {plan === 'premium' ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 shadow-sm">
-                  <Star className="w-2 h-2 mr-1 fill-current" />
-                  Premium
+                <span className="relative inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 shadow-sm overflow-hidden group/badge">
+                  <motion.div
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: 'linear', repeatDelay: 1 }}
+                    className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent -skew-x-12"
+                  />
+                  <Star className="w-2 h-2 mr-1 fill-current relative z-10" />
+                  <span className="relative z-10">Premium</span>
                 </span>
               ) : plan === 'pro' ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50">
-                  <Sparkles className="w-2 h-2 mr-1 fill-current" />
-                  Pro
+                <span className="relative inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 overflow-hidden">
+                  <motion.div
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ repeat: Infinity, duration: 2.5, ease: 'linear', repeatDelay: 1.5 }}
+                    className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent -skew-x-12"
+                  />
+                  <Sparkles className="w-2 h-2 mr-1 fill-current relative z-10" />
+                  <span className="relative z-10">Pro</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
