@@ -87,6 +87,35 @@ export function OpenFinanceManager() {
         }
     };
 
+    const handleSyncItem = async (itemId: string) => {
+        setLoading(true);
+        setError('');
+        setSuccess('Solicitando sincronização manual...');
+
+        try {
+            const res = await fetch('/api/pluggy/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                setSuccess('Sincronização concluída com sucesso! Recarregue a página para ver as novas transações no dashboard.');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                setError(data.error || 'Erro ao sincronizar.');
+                setSuccess('');
+            }
+        } catch (err: any) {
+            setError('Falha de comunicação com o servidor.');
+            setSuccess('');
+        } finally {
+            setLoading(false);
+            fetchItems();
+        }
+    };
+
     const onSuccess = async (itemData: any) => {
         console.log('Successfully connected bank item:', itemData);
         setIsWidgetOpen(false);
@@ -199,13 +228,23 @@ export function OpenFinanceManager() {
                                     {item.error && <p className="text-[10px] text-red-400 mt-1 max-w-[200px] truncate">{item.error}</p>}
                                 </div>
                             </div>
-                            <button
-                                onClick={() => handleDeleteItem(item.pluggyItemId)}
-                                className="p-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 rounded transition-colors"
-                                title="Desconectar Banco"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => handleSyncItem(item.pluggyItemId)}
+                                    disabled={loading}
+                                    className="p-2 text-zinc-400 hover:text-green-400 hover:bg-zinc-700 rounded transition-colors disabled:opacity-50"
+                                    title="Sincronizar Manualmente"
+                                >
+                                    <RefreshCcw className={`w-4 h-4 ${loading && item.status === 'UPDATING' ? 'animate-spin' : ''}`} />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteItem(item.pluggyItemId)}
+                                    className="p-2 text-zinc-400 hover:text-red-400 hover:bg-zinc-700 rounded transition-colors"
+                                    title="Desconectar Banco"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
