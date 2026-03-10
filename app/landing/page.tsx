@@ -8,6 +8,7 @@ import {
     ChevronRight, Check, Sparkles, TrendingUp, CreditCard, Wallet,
     RefreshCcw, PieChart, Lock, Eye, Star, Users, ArrowUpRight
 } from 'lucide-react';
+import { Logo } from '@/components/Logo';
 
 /* ====== Animation presets ====== */
 const fadeUp = {
@@ -90,7 +91,7 @@ export default function LandingPage() {
             <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b" style={{ backgroundColor: 'var(--bg-cream)', borderColor: 'var(--border-color)', opacity: 0.97 }}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center space-x-2.5">
-                        <img src="/icon.png" alt="WealthCash Logo" className="w-9 h-9 rounded-xl shadow-sm border" style={{ borderColor: 'var(--border-color)' }} />
+                        <Logo className="w-9 h-9 text-zinc-900 dark:text-zinc-100" />
                         <span className="font-editorial font-bold text-lg tracking-tight">WealthCash</span>
                     </div>
                     <div className="hidden sm:flex items-center space-x-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -584,7 +585,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                         <div className="col-span-2 sm:col-span-1">
                             <div className="flex items-center space-x-2.5 mb-4">
-                                <img src="/icon.png" alt="WealthCash Logo" className="w-7 h-7 rounded-lg border shadow-sm" style={{ borderColor: 'var(--border-color)' }} />
+                                <Logo className="w-7 h-7 text-zinc-900 dark:text-zinc-100" />
                                 <span className="font-editorial font-bold text-sm">WealthCash</span>
                             </div>
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>

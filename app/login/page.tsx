@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -49,7 +50,7 @@ export default function LoginPage() {
             >
                 {/* Logo */}
                 <div className="flex items-center justify-center space-x-3 mb-10">
-                    <img src="/icon.png" alt="WealthCash Logo" className="w-10 h-10 rounded-xl border shadow-sm" style={{ borderColor: 'var(--border-color)' }} />
+                    <Logo className="w-10 h-10 text-zinc-900" />
                     <span className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">WealthCash</span>
                 </div>
 
