@@ -1,7 +1,7 @@
 'use client';
 
 import { DashboardLayout } from '@/components/DashboardLayout';
-import { Plus, Plane, Shield, Car, Target, CheckCircle2 } from 'lucide-react';
+import { Plus, Plane, Shield, Car, Target, CheckCircle2, Home, GraduationCap, Heart, PiggyBank, Gem } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
@@ -26,61 +26,194 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'Target': Target,
 };
 
+const ICONS = [
+  { key: 'Plane', label: '✈️', name: 'Viagem' },
+  { key: 'Home', label: '🏠', name: 'Casa' },
+  { key: 'Car', label: '🚗', name: 'Carro' },
+  { key: 'GraduationCap', label: '🎓', name: 'Educação' },
+  { key: 'Heart', label: '❤️', name: 'Saúde' },
+  { key: 'PiggyBank', label: '🐷', name: 'Poupança' },
+  { key: 'Gem', label: '💎', name: 'Luxo' },
+  { key: 'Target', label: '🎯', name: 'Outro' },
+];
+
+const COLORS = [
+  { key: 'sky', label: 'Azul', bg: '#0ea5e9' },
+  { key: 'violet', label: 'Roxo', bg: '#8b5cf6' },
+  { key: 'emerald', label: 'Verde', bg: '#10b981' },
+  { key: 'amber', label: 'Amarelo', bg: '#f59e0b' },
+  { key: 'rose', label: 'Rosa', bg: '#f43f5e' },
+  { key: 'indigo', label: 'Índigo', bg: '#6366f1' },
+];
+
 function AddGoalModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [icon, setIcon] = useState('Target');
+  const [color, setColor] = useState('violet');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    const res = await fetch('/api/goals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, target, deadline, icon: 'Target', color: 'indigo' }),
-    });
-    if (res.ok) onSuccess();
-    setLoading(false);
+
+    try {
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, target: parseFloat(target), deadline, icon, color }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        onSuccess();
+      } else {
+        setError(data.error || 'Erro ao criar meta.');
+      }
+    } catch {
+      setError('Erro de comunicação com o servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="relative bg-white border border-zinc-200 p-6 w-full max-w-md shadow-2xl"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="relative bg-white rounded-2xl border border-zinc-200 p-6 w-full max-w-md shadow-2xl"
       >
-        <h2 className="text-lg font-editorial font-bold text-zinc-900 mb-4">Nova Meta</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Nome</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)}
-              className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 bg-transparent"
-              placeholder="Ex: Viagem para Europa" required />
+            <h2 className="text-lg font-editorial font-bold text-zinc-900">Nova Meta</h2>
+            <p className="text-xs text-zinc-400 mt-0.5">Defina seu objetivo financeiro</p>
           </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-zinc-700 transition-colors">
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Name */}
           <div>
-            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Valor alvo (R$)</label>
-            <input type="number" step="0.01" value={target} onChange={e => setTarget(e.target.value)}
-              className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 bg-transparent"
-              placeholder="20000" required />
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Nome da Meta</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all placeholder:text-zinc-400"
+              placeholder="Ex: Viagem para Europa"
+              required
+            />
           </div>
+
+          {/* Target Amount */}
           <div>
-            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Prazo</label>
-            <input type="text" value={deadline} onChange={e => setDeadline(e.target.value)}
-              className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 bg-transparent"
-              placeholder="Até Dez 2026" required />
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Valor Alvo</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-zinc-400">R$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="1"
+                value={target}
+                onChange={e => setTarget(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all placeholder:text-zinc-400"
+                placeholder="20.000,00"
+                required
+              />
+            </div>
           </div>
-          <button type="submit" disabled={loading}
-            className="w-full py-3 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all disabled:opacity-60">
-            {loading ? 'Salvando...' : 'Criar Meta'}
+
+          {/* Deadline — proper month picker */}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Prazo (mês / ano)</label>
+            <input
+              type="month"
+              value={deadline}
+              onChange={e => setDeadline(e.target.value)}
+              className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+              required
+            />
+          </div>
+
+          {/* Icon picker */}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Ícone</label>
+            <div className="grid grid-cols-4 gap-2">
+              {ICONS.map(ic => (
+                <button
+                  key={ic.key}
+                  type="button"
+                  onClick={() => setIcon(ic.key)}
+                  className={clsx(
+                    'flex flex-col items-center py-2 rounded-xl border text-lg transition-all',
+                    icon === ic.key
+                      ? 'border-violet-400 bg-violet-50 scale-105 shadow-sm'
+                      : 'border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-white'
+                  )}
+                >
+                  <span>{ic.label}</span>
+                  <span className="text-[9px] text-zinc-400 mt-0.5 font-medium">{ic.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Color picker */}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Cor</label>
+            <div className="flex items-center gap-2">
+              {COLORS.map(c => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setColor(c.key)}
+                  title={c.label}
+                  className={clsx(
+                    'w-8 h-8 rounded-full transition-all border-2',
+                    color === c.key ? 'scale-125 border-zinc-900 shadow-md' : 'border-transparent hover:scale-110'
+                  )}
+                  style={{ backgroundColor: c.bg }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-zinc-900 text-white text-sm font-semibold rounded-xl hover:bg-zinc-800 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Criando...
+              </>
+            ) : (
+              'Criar Meta'
+            )}
           </button>
         </form>
       </motion.div>
     </div>
   );
 }
+
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
