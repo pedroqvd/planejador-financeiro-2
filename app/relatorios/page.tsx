@@ -12,8 +12,10 @@ import {
 import {
     TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
     Wallet, DollarSign, PiggyBank, ShoppingCart, Car, Home,
-    Coffee, Briefcase, CreditCard, Loader2
+    Coffee, Briefcase, CreditCard, Loader2, FileDown
 } from 'lucide-react';
+import { generateFinancialPDF } from '@/lib/generate-pdf';
+import toast from 'react-hot-toast';
 
 type TimelineEntry = { label: string; key: string; income: number; expenses: number; balance: number };
 type CategoryEntry = { category: string; total: number; percentage: number };
@@ -194,7 +196,32 @@ const CustomLineTooltip = ({ active, payload, label }: any) => {
 export default function RelatoriosPage() {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [generatingPdf, setGeneratingPdf] = useState(false);
     const { theme } = useTheme();
+
+    const handleDownloadPDF = async () => {
+        if (!data) return;
+        setGeneratingPdf(true);
+        try {
+            // Need to pass the current month to indicate the period
+            const currentMonthObj = data.timeline[data.timeline.length - 1]; // Assume latest requested is the 'current'
+
+            generateFinancialPDF({
+                income: data.kpis.income.value,
+                expenses: data.kpis.expenses.value,
+                balance: data.kpis.balance.value,
+                categoryBreakdown: data.categoryBreakdown,
+                topExpenses: data.topExpenses
+            }, currentMonthObj?.key || data.currentMonth);
+
+            toast.success('Relatório gerado com sucesso!');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            toast.error('Erro ao gerar relatório PDF.');
+        } finally {
+            setGeneratingPdf(false);
+        }
+    };
 
     const gridColor = theme === 'dark' ? '#1e293b' : '#f4f4f5';
     const tickColor = theme === 'dark' ? '#64748b' : '#a1a1aa';
@@ -261,20 +288,36 @@ export default function RelatoriosPage() {
                             Análise financeira dos últimos 6 meses
                         </p>
                     </div>
-                    <div className="flex items-center space-x-1 bg-zinc-100 rounded-lg p-1">
-                        {data.timeline.map((m, i) => (
-                            <div
-                                key={m.key}
-                                className={clsx(
-                                    'px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all',
-                                    i === data.timeline.length - 1
-                                        ? 'bg-zinc-900 text-white shadow-sm'
-                                        : 'text-zinc-500 hover:text-zinc-700'
-                                )}
-                            >
-                                {m.label}
-                            </div>
-                        ))}
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <button
+                            onClick={handleDownloadPDF}
+                            disabled={generatingPdf}
+                            className="flex items-center space-x-2 px-4 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 text-zinc-700 text-xs font-bold uppercase tracking-wider rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        >
+                            {generatingPdf ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <FileDown className="w-4 h-4" />
+                            )}
+                            <span>Baixar PDF</span>
+                        </button>
+
+                        <div className="flex items-center space-x-1 bg-zinc-100 rounded-lg p-1">
+                            {data.timeline.map((m, i) => (
+                                <div
+                                    key={m.key}
+                                    className={clsx(
+                                        'px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all',
+                                        i === data.timeline.length - 1
+                                            ? 'bg-zinc-900 text-white shadow-sm'
+                                            : 'text-zinc-500 hover:text-zinc-700'
+                                    )}
+                                >
+                                    {m.label}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </motion.div>
 
@@ -469,7 +512,7 @@ export default function RelatoriosPage() {
                         )}
                     </motion.div>
                 </div>
-            </div>
-        </DashboardLayout>
+            </div >
+        </DashboardLayout >
     );
 }

@@ -3,6 +3,7 @@
 import { Sidebar, MobileSidebar } from '@/components/Sidebar';
 import { Header } from '@/components/Header';
 import { AIAdvisor } from '@/components/AIAdvisor';
+import { OfflineStatus } from '@/components/OfflineStatus';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -16,6 +17,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <MobileSidebar open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       <div className="flex flex-col flex-1 overflow-hidden">
+        <OfflineStatus />
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <AnimatePresence mode="wait">

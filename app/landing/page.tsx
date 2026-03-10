@@ -90,9 +90,7 @@ export default function LandingPage() {
             <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b" style={{ backgroundColor: 'var(--bg-cream)', borderColor: 'var(--border-color)', opacity: 0.97 }}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center space-x-2.5">
-                        <div className="w-9 h-9 rounded-xl border flex items-center justify-center shadow-sm" style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
-                            <span className="font-editorial text-base font-bold" style={{ color: 'var(--accent-ink)' }}>W</span>
-                        </div>
+                        <img src="/icon.png" alt="WealthCash Logo" className="w-9 h-9 rounded-xl shadow-sm border" style={{ borderColor: 'var(--border-color)' }} />
                         <span className="font-editorial font-bold text-lg tracking-tight">WealthCash</span>
                     </div>
                     <div className="hidden sm:flex items-center space-x-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -586,9 +584,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                         <div className="col-span-2 sm:col-span-1">
                             <div className="flex items-center space-x-2.5 mb-4">
-                                <div className="w-7 h-7 rounded-lg border flex items-center justify-center" style={{ borderColor: 'var(--border-color)' }}>
-                                    <span className="font-editorial text-xs font-bold" style={{ color: 'var(--accent-ink)' }}>W</span>
-                                </div>
+                                <img src="/icon.png" alt="WealthCash Logo" className="w-7 h-7 rounded-lg border shadow-sm" style={{ borderColor: 'var(--border-color)' }} />
                                 <span className="font-editorial font-bold text-sm">WealthCash</span>
                             </div>
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>

@@ -30,7 +30,12 @@ export async function syncPluggyTransactions(
 
         for (const account of accountsResponse.results) {
             try {
-                const txResponse = await client.fetchTransactions(account.id);
+                // Fetch up to 365 days of history as requested
+                const oneYearAgo = new Date();
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                const from = oneYearAgo.toISOString().split('T')[0];
+
+                const txResponse = await client.fetchTransactions(account.id, { from });
                 const transactions = txResponse.results;
                 console.log(`[Pluggy Sync] Found ${transactions.length} transactions for account ${account.name}`);
 

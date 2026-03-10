@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { ratelimit, getClientIp } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
 import { sanitize } from '@/lib/utils';
+import { sendPushNotification } from '@/lib/firebase-admin';
 
 const VALID_TYPES = ['income', 'expense'] as const;
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
@@ -145,9 +146,16 @@ export async function POST(request: Request) {
         );
 
         if (type === 'expense') {
+            // Check for notifications targets
+            let userDeviceToken: string | null = null;
+
             // Update budgets for all created months
             for (const tx of createdTxs) {
                 const currentMonth = tx.date.toISOString().slice(0, 7);
+                const categoryBudget = await prisma.budget.findFirst({
+                    where: { userId: session.user.id, category: tx.category, month: currentMonth }
+                });
+
                 await prisma.budget.updateMany({
                     where: {
                         userId: session.user.id,
@@ -158,6 +166,51 @@ export async function POST(request: Request) {
                         spent: { increment: tx.amount },
                     },
                 });
+
+                // Rule 1: Budget Exceeded Notification
+                if (categoryBudget && (categoryBudget.spent + tx.amount) > categoryBudget.limit && categoryBudget.spent <= categoryBudget.limit) {
+                    if (!userDeviceToken) {
+                        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { fcmToken: true } });
+                        userDeviceToken = user?.fcmToken || null;
+                    }
+
+                    if (userDeviceToken) {
+                        // Fire and forget (don't await so we don't block the request)
+                        sendPushNotification(
+                            userDeviceToken,
+                            '⚠️ Alerta de Orçamento: Limite Atingido!',
+                            `Você acabou de exceder seu limite de ${categoryBudget.limit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} para a categoria ${categoryBudget.category}.`
+                        ).catch(e => console.error('Failed to send budget warning push:', e));
+                    }
+                }
+            }
+
+            // Rule 2: Unusual Expense Alert (Single large expense)
+            // Check if this single amount is > 3x the average of this category in the last 30 days
+            if (amount > 100) { // Only care if it's somewhat significant
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                const recentTxs = await prisma.transaction.aggregate({
+                    where: { userId: session.user.id, category, type: 'expense', date: { gte: thirtyDaysAgo } },
+                    _avg: { amount: true }
+                });
+
+                const avgAmount = recentTxs._avg.amount || 0;
+                if (avgAmount > 0 && amount > (avgAmount * 3)) {
+                    if (!userDeviceToken) {
+                        const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { fcmToken: true } });
+                        userDeviceToken = user?.fcmToken || null;
+                    }
+
+                    if (userDeviceToken) {
+                        sendPushNotification(
+                            userDeviceToken,
+                            '🛡️ AI Coach: Gasto Incomum Detectado',
+                            `Você registrou R$ ${amount.toFixed(2)} em ${category}. Isso é bem acima da sua média recente. Tudo certo?`
+                        ).catch(e => console.error('Failed to send unusual expense push:', e));
+                    }
+                }
             }
         }
 

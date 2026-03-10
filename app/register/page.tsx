@@ -73,9 +73,7 @@ export default function RegisterPage() {
             >
                 {/* Logo */}
                 <div className="flex items-center justify-center space-x-3 mb-10">
-                    <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center bg-white">
-                        <span className="font-editorial text-xl text-zinc-900 leading-none font-bold">W</span>
-                    </div>
+                    <img src="/icon.png" alt="WealthCash Logo" className="w-10 h-10 rounded-xl border shadow-sm" style={{ borderColor: 'var(--border-color)' }} />
                     <span className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">WealthCash</span>
                 </div>
 

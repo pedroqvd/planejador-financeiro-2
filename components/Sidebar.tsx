@@ -39,9 +39,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
     <>
       <div className="p-6 pt-8 pb-10 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full border border-zinc-200 flex items-center justify-center bg-white shadow-sm">
-            <span className="font-editorial text-lg text-zinc-900 leading-none">W</span>
-          </div>
+          <img src="/icon.png" alt="WealthCash Logo" className="w-8 h-8 rounded-xl border shadow-sm" style={{ borderColor: 'var(--border-color)' }} />
           <span className="text-xl font-editorial font-bold tracking-tight text-zinc-900">WealthCash</span>
         </div>
         {onClose && (
