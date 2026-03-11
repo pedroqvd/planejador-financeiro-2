@@ -192,6 +192,26 @@ ${context}`;
         const response = await getGeminiClient().models.generateContent({
             model: 'gemini-2.0-flash',
             contents: [{ role: 'user', parts }],
+            config: {
+                safetySettings: [
+                    {
+                        category: 'HARM_CATEGORY_HARASSMENT',
+                        threshold: 'BLOCK_NONE',
+                    },
+                    {
+                        category: 'HARM_CATEGORY_HATE_SPEECH',
+                        threshold: 'BLOCK_NONE',
+                    },
+                    {
+                        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                        threshold: 'BLOCK_NONE',
+                    },
+                    {
+                        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                        threshold: 'BLOCK_NONE',
+                    },
+                ] as any,
+            }
         });
 
         let reply = response.text || 'Desculpe, não consegui processar sua pergunta. Tente novamente.';

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Sparkles, Send, Loader2, Bot, User, Mic, Square, X, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import toast from 'react-hot-toast';
 
 type Message = {
   id: string;
@@ -119,7 +120,7 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
         setIsRecording(true);
       } catch (err) {
         console.error('Error accessing microphone', err);
-        alert('Permissão de microfone negada ou indisponível.');
+        toast.error('Permissão de microfone bloqueada pelo navegador. Libere o acesso na barra de endereço.');
       }
     };
 
