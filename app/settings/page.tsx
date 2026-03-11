@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'motion/react';
-import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera, Bell, Moon, Sun, Download, Trash2, AlertTriangle } from 'lucide-react';
+import { User, Lock, Check, AlertCircle, Loader2, Crown, Sparkles, ExternalLink, Camera, Bell, Moon, Sun, Download, Trash2, AlertTriangle, ShieldCheck, History, Smartphone } from 'lucide-react';
 import Image from 'next/image';
 import { PushNotificationManager } from '@/components/PushNotificationManager'; // <-- NEW
 import { OpenFinanceManager } from '@/components/OpenFinanceManager';
@@ -93,11 +93,79 @@ export default function SettingsPage() {
     const [downloadLoading, setDownloadLoading] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [mfaStatus, setMfaStatus] = useState((session?.user as any)?.mfaEnabled || false);
+    const [mfaSetupLoading, setMfaSetupLoading] = useState(false);
+    const [mfaQrCode, setMfaQrCode] = useState('');
+    const [mfaSecret, setMfaSecret] = useState('');
+    const [mfaToken, setMfaToken] = useState('');
+    const [mfaError, setMfaError] = useState('');
+    const [auditLogs, setAuditLogs] = useState<any[]>([]);
+    const [logsLoading, setLogsLoading] = useState(false);
     const { theme, toggleTheme } = useTheme();
 
     useEffect(() => {
         if (session?.user?.image) setPhoto(session.user.image);
+        fetchLogs();
     }, [session]);
+
+    const fetchLogs = async () => {
+        setLogsLoading(true);
+        try {
+            const res = await fetch('/api/audit');
+            if (res.ok) {
+                const data = await res.json();
+                setAuditLogs(data);
+            }
+        } catch (err) { console.error('Error fetching logs', err); }
+        finally { setLogsLoading(false); }
+    };
+
+    const setupMfa = async () => {
+        setMfaSetupLoading(true);
+        setMfaError('');
+        try {
+            const res = await fetch('/api/auth/mfa/setup', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                setMfaQrCode(data.qrCode);
+                setMfaSecret(data.secret);
+            } else { setMfaError('Erro ao iniciar configuração de MFA.'); }
+        } catch { setMfaError('Erro de conexão.'); }
+        finally { setMfaSetupLoading(false); }
+    };
+
+    const verifyAndEnableMfa = async () => {
+        setMfaSetupLoading(true);
+        setMfaError('');
+        try {
+            const res = await fetch('/api/auth/mfa/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: mfaToken, secret: mfaSecret, setup: true }),
+            });
+            if (res.ok) {
+                setMfaStatus(true);
+                setMfaQrCode('');
+                setMfaSecret('');
+                setMfaToken('');
+                update(); // Refresh session
+                fetchLogs();
+            } else {
+                const data = await res.json();
+                setMfaError(data.error || 'Código inválido.');
+            }
+        } catch { setMfaError('Erro de conexão.'); }
+        finally { setMfaSetupLoading(false); }
+    };
+
+    const disableMfa = async () => {
+        if (!confirm('Tem certeza que deseja desativar o MFA? Isso reduz a segurança da sua conta.')) return;
+        setMfaSetupLoading(true);
+        try {
+            // Placeholder: we'd need a route to disable MFA
+            alert('Funcionalidade de desativar MFA em implementação!');
+        } finally { setMfaSetupLoading(false); }
+    };
 
     if (status === 'loading') return <SettingsSkeleton />;
 
@@ -548,6 +616,146 @@ export default function SettingsPage() {
                                 <span>Exportar</span>
                             </button>
                         </div>
+                    </div>
+                </motion.div>
+
+                {/* MFA Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="bg-white border border-zinc-200 p-6"
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center">
+                                <Smartphone className="w-5 h-5 text-zinc-600" />
+                            </div>
+                            <div>
+                                <h2 className="font-editorial font-semibold text-zinc-900">Autenticação em Duas Etapas (MFA)</h2>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Proteja sua conta com um segundo fator</p>
+                            </div>
+                        </div>
+                        <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest ${mfaStatus ? 'bg-emerald-50 text-emerald-600' : 'bg-zinc-100 text-zinc-500'}`}>
+                            {mfaStatus ? 'Ativo' : 'Desativado'}
+                        </div>
+                    </div>
+
+                    {!mfaStatus && !mfaQrCode && (
+                        <div className="space-y-4">
+                            <p className="text-sm text-zinc-600 leading-relaxed">
+                                Adicione uma camada extra de segurança. Ao ativar o MFA, o WealthCash solicitará um código gerado no seu celular (Google Authenticator, Authy, etc) sempre que você fizer login.
+                            </p>
+                            <button
+                                onClick={setupMfa}
+                                disabled={mfaSetupLoading}
+                                className="px-5 py-2.5 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all disabled:opacity-50 flex items-center space-x-2"
+                            >
+                                {mfaSetupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                                <span>Configurar MFA</span>
+                            </button>
+                        </div>
+                    )}
+
+                    {mfaQrCode && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="space-y-6 pt-4 border-t border-zinc-100"
+                        >
+                            <div className="flex flex-col sm:flex-row gap-6 items-center">
+                                <div className="p-4 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                                    <Image src={mfaQrCode} alt="Scanner QR" width={160} height={160} className="rounded-lg" />
+                                </div>
+                                <div className="space-y-4 flex-1">
+                                    <h3 className="text-sm font-bold text-zinc-900">1. Escaneie o QR Code</h3>
+                                    <p className="text-xs text-zinc-500 leading-relaxed">
+                                        Use seu aplicativo de autenticação preferido para escanear o código ao lado. Se não conseguir, use a chave: <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-900 font-mono text-[10px]">{mfaSecret}</code>
+                                    </p>
+                                    <div className="h-px bg-zinc-100" />
+                                    <h3 className="text-sm font-bold text-zinc-900">2. Confirme o código</h3>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            maxLength={6}
+                                            value={mfaToken}
+                                            onChange={(e) => setMfaToken(e.target.value)}
+                                            placeholder="000000"
+                                            className="flex-1 px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:border-zinc-900"
+                                        />
+                                        <button
+                                            onClick={verifyAndEnableMfa}
+                                            disabled={mfaToken.length !== 6 || mfaSetupLoading}
+                                            className="px-4 py-2 bg-emerald-600 text-white text-xs font-bold uppercase rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {mfaSetupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Ativar'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {mfaError && <p className="text-xs text-red-600 font-medium">{mfaError}</p>}
+                        </motion.div>
+                    )}
+
+                    {mfaStatus && (
+                        <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-bold text-emerald-900">Sua conta está super protegida!</p>
+                                    <p className="text-xs text-emerald-700">O segundo fator de autenticação está ativo.</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={disableMfa}
+                                className="text-[10px] font-bold text-red-600 uppercase hover:underline"
+                            >
+                                Desativar
+                            </button>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Audit Logs Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.28 }}
+                    className="bg-white border border-zinc-200 p-6"
+                >
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center">
+                                <History className="w-5 h-5 text-zinc-600" />
+                            </div>
+                            <div>
+                                <h2 className="font-editorial font-semibold text-zinc-900">Atividades de Segurança</h2>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Histórico recente da sua conta</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        {logsLoading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="w-6 h-6 animate-spin text-zinc-300" />
+                            </div>
+                        ) : auditLogs.length > 0 ? (
+                            auditLogs.map((log) => (
+                                <div key={log.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-zinc-50 transition-colors border border-transparent hover:border-zinc-100 text-xs text-zinc-600">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${log.action.includes('FAILURE') ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                                        <span className="font-medium text-zinc-900">{log.action.split('_').join(' ')}</span>
+                                        <span className="text-[10px] opacity-50">{log.ip}</span>
+                                    </div>
+                                    <span className="text-[10px] opacity-50">
+                                        {new Date(log.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-center py-8 text-xs text-zinc-400 italic">Nenhuma atividade registrada ainda.</p>
+                        )}
                     </div>
                 </motion.div>
 

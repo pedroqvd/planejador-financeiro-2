@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { logAudit } from './audit';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
@@ -29,12 +30,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 if (!isValid) return null;
 
+                await logAudit({
+                    userId: user.id,
+                    action: 'LOGIN_SUCCESS',
+                    details: 'User logged in via credentials'
+                });
+
                 return {
                     id: user.id,
                     name: user.name,
                     email: user.email,
                     plan: user.plan,
                     preferredCurrency: (user as any).preferredCurrency || 'BRL',
+                    mfaEnabled: (user as any).mfaEnabled || false,
                 };
             },
         }),
@@ -49,19 +57,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async jwt({ token, user, trigger }) {
             if (user) {
                 token.id = user.id;
-                token.plan = (user as { plan?: string }).plan || 'free';
+                token.plan = (user as any).plan || 'free';
                 token.preferredCurrency = (user as any).preferredCurrency || 'BRL';
+                token.mfaEnabled = (user as any).mfaEnabled || false;
             }
             // Refresh plan and currency from DB on session update
             if (trigger === 'update' && token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
                     // @ts-ignore
-                    select: { plan: true, preferredCurrency: true },
+                    select: { plan: true, preferredCurrency: true, mfaEnabled: true },
                 });
                 if (dbUser) {
                     token.plan = dbUser.plan;
                     token.preferredCurrency = (dbUser as any).preferredCurrency || 'BRL';
+                    token.mfaEnabled = (dbUser as any).mfaEnabled || false;
                 }
             }
             return token;
@@ -71,6 +81,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.id = token.id as string;
                 (session.user as any).plan = token.plan as string;
                 (session.user as any).preferredCurrency = token.preferredCurrency as string;
+                (session.user as any).mfaEnabled = token.mfaEnabled as boolean;
             }
             return session;
         },
