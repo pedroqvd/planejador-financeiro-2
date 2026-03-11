@@ -25,6 +25,8 @@ model User {
   preferredCurrency    String        @default("BRL") // Base currency for dashboard
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+  mfaEnabled           Boolean       @default(false)
+  mfaSecret            String?       // Encrypted TOTP secret
   transactions         Transaction[]
   budgets              Budget[]
   goals                Goal[]
@@ -33,8 +35,24 @@ model User {
   investments          Investment[]
   pluggyItems          PluggyItem[]
   recurrences          Recurrence[]
+  auditLogs            AuditLog[]
 
   @@index([email])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   // e.g., "LOGIN_SUCCESS", "LOGIN_FAILURE", "DATA_EXPORT", "ACCOUNT_DELETE", "MFA_ENABLED", "MFA_DISABLED"
+  details   String?  // JSON or string with more context
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model Transaction {

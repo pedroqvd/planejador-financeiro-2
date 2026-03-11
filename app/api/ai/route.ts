@@ -190,27 +190,11 @@ ${context}`;
         }
 
         const response = await getGeminiClient().models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'models/gemini-2.0-flash',
             contents: [{ role: 'user', parts }],
             config: {
-                safetySettings: [
-                    {
-                        category: 'HARM_CATEGORY_HARASSMENT',
-                        threshold: 'BLOCK_NONE',
-                    },
-                    {
-                        category: 'HARM_CATEGORY_HATE_SPEECH',
-                        threshold: 'BLOCK_NONE',
-                    },
-                    {
-                        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                        threshold: 'BLOCK_NONE',
-                    },
-                    {
-                        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                        threshold: 'BLOCK_NONE',
-                    },
-                ] as any,
+                maxOutputTokens: 1000,
+                temperature: 0.7,
             }
         });
 
@@ -281,12 +265,19 @@ ${context}`;
 
         // Detect specific Gemini API rejections
         if (error.status === 429) {
-            return NextResponse.json({ error: 'Google API Rate Limit Excedido (DDoS mitigado na nuvem)' }, { status: 429 });
+            return NextResponse.json({ error: 'Muitas consultas à IA. Aguarde um instante.' }, { status: 429 });
         }
         if (error.status === 403 || error.status === 400) {
-            return NextResponse.json({ error: 'Requisição bloqueada por Filtros de Segurança da IA (Prompt Injection mitigado)' }, { status: 403 });
+            // Se for realmente bloqueio de segurança, o Gemini costuma retornar algo no erro.
+            // Aqui removemos o texto enganoso de "Prompt Injection" se não tivermos certeza.
+            const isSafety = error.message?.toLowerCase().includes('safety') || error.message?.toLowerCase().includes('candidate');
+            return NextResponse.json({ 
+                error: isSafety 
+                    ? 'Conteúdo bloqueado pelos filtros de segurança da IA.' 
+                    : `Erro na consulta à IA: ${error.message || 'Verifique sua conexão ou crédito.'}` 
+            }, { status: error.status });
         }
 
-        return NextResponse.json({ error: 'Erro ao consultar IA.' }, { status: 500 });
+        return NextResponse.json({ error: 'Erro ao consultar IA. Tente novamente em instantes.' }, { status: 500 });
     }
 }

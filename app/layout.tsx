@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
+import { CookieBanner } from '@/components/CookieBanner';
 import '@/lib/env'; // Validate environment on startup
 
 const inter = Inter({
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans text-zinc-900 antialiased" suppressHydrationWarning>
         <Providers>
           {children}
+          <CookieBanner />
         </Providers>
       </body>
     </html>

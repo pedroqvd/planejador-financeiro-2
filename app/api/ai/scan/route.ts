@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         `;
 
         const response = await getGeminiClient().models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'models/gemini-2.0-flash',
             contents: [
                 {
                     role: 'user',
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
                 }
             ],
             config: {
-                maxOutputTokens: 300,
-                temperature: 0.2, // Low temperature for higher accuracy in extraction
+                maxOutputTokens: 500,
+                temperature: 0.1,
             }
         });
 
@@ -67,10 +67,17 @@ export async function POST(request: Request) {
             return NextResponse.json(insightJson);
         } catch (err) {
             console.error('Scan JSON Parse Error:', err, reply);
-            return NextResponse.json({ error: 'Falha ao processar o formato da nota.' }, { status: 500 });
+            return NextResponse.json({ error: 'Falha ao processar o formato da nota pela IA.' }, { status: 500 });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Scan API error:', error);
+        
+        if (error.status === 400 || error.status === 403) {
+            return NextResponse.json({ 
+                error: `Erro de configuração na IA: ${error.message || 'Verifique os parâmetros.'}` 
+            }, { status: error.status });
+        }
+
         return NextResponse.json({ error: 'Erro interno no scanner IA.' }, { status: 500 });
     }
 }

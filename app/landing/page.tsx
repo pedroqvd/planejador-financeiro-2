@@ -603,17 +603,17 @@ export default function LandingPage() {
                         <div>
                             <h4 className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-secondary)' }}>Legal</h4>
                             <ul className="space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                <li><a href="#" className="hover:opacity-80 transition-opacity">Termos de Uso</a></li>
-                                <li><a href="#" className="hover:opacity-80 transition-opacity">Privacidade</a></li>
-                                <li><a href="#" className="hover:opacity-80 transition-opacity">LGPD</a></li>
+                                <li><Link href="/termos" className="hover:opacity-80 transition-opacity">Termos de Uso</Link></li>
+                                <li><Link href="/privacidade" className="hover:opacity-80 transition-opacity">Privacidade</Link></li>
+                                <li><Link href="/lgpd" className="hover:opacity-80 transition-opacity">LGPD</Link></li>
                             </ul>
                         </div>
                         <div>
                             <h4 className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text-secondary)' }}>Suporte</h4>
                             <ul className="space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                <li><a href="#" className="hover:opacity-80 transition-opacity">Central de Ajuda</a></li>
-                                <li><a href="#" className="hover:opacity-80 transition-opacity">Contato</a></li>
-                                <li><a href="#" className="hover:opacity-80 transition-opacity">Status</a></li>
+                                <li><Link href="/suporte" className="hover:opacity-80 transition-opacity">Central de Ajuda</Link></li>
+                                <li><Link href="/suporte" className="hover:opacity-80 transition-opacity">Contato</Link></li>
+                                <li><Link href="#" className="hover:opacity-80 transition-opacity">Status</Link></li>
                             </ul>
                         </div>
                     </div>
