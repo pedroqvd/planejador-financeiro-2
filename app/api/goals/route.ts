@@ -20,12 +20,21 @@ export async function GET() {
         if (!success) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
     } catch { /* dev fallback */ }
 
-    const goals = await prisma.goal.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: 'desc' },
-    });
+    const [goals, user] = await Promise.all([
+        prisma.goal.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { preferredCurrency: true }
+        })
+    ]);
 
-    return NextResponse.json(goals);
+    return NextResponse.json({
+        goals,
+        preferredCurrency: user?.preferredCurrency || 'BRL'
+    });
 }
 
 export async function POST(request: Request) {

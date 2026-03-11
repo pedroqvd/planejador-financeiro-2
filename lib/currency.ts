@@ -115,3 +115,19 @@ export const SUPPORTED_CURRENCIES = [
     { code: 'GBP', name: 'Libra Esterlina', symbol: '£' },
     { code: 'CAD', name: 'Dólar Canadense', symbol: 'C$' },
 ];
+
+/**
+ * Formats a numeric value as a currency string using the specified currency code.
+ */
+export function formatCurrency(amount: number, currencyCode: string = 'BRL'): string {
+    const currencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currencyCode);
+    const symbol = currencyInfo?.symbol || 'R$';
+
+    // We use pt-BR locale by default for formatting numbers to stay consistent with the UI
+    const formattedNumber = amount.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    return `${symbol} ${formattedNumber}`;
+}

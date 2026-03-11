@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/lib/currency';
 
 type ScanResult = {
     name: string;
@@ -214,7 +215,7 @@ export function ReceiptScanner({ onClose, onSuccess }: { onClose: () => void; on
                                             </div>
                                             <div>
                                                 <p className="text-[10px] uppercase text-zinc-400 font-bold mb-1">Valor</p>
-                                                <p className="text-lg font-editorial font-bold text-zinc-900 dark:text-zinc-100">R$ {result.amount.toFixed(2)}</p>
+                                                <p className="text-lg font-editorial font-bold text-zinc-900 dark:text-zinc-100">{formatCurrency(result.amount)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[10px] uppercase text-zinc-400 font-bold mb-1">Categoria</p>

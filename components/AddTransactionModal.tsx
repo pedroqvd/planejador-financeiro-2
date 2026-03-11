@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { addToSyncQueue } from '@/lib/sync';
 import toast from 'react-hot-toast';
+import { formatCurrency } from '@/lib/currency';
 
 const expenseCategories = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'];
 const incomeCategories = ['Salário', 'Investimento', 'Presente', 'Venda', 'Outros'];
@@ -131,17 +132,20 @@ export function AddTransactionModal({
                     "bg-[#fdf9f0] shadow-black/20" // Matching dashboard theme
                 )}
             >
-                <div className="flex items-center justify-between mb-8">
+                <div className={clsx(
+                    "flex items-center justify-between p-6 -mx-6 -mt-6 mb-6 rounded-t-2xl transition-colors duration-500",
+                    isExpense ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"
+                )}>
                     <div>
-                        <h2 className="text-xl font-editorial font-bold text-zinc-900">
+                        <h2 className="text-xl font-editorial font-bold">
                             {isEditing ? 'Editar Transação' : 'Nova Transação'}
                         </h2>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">
+                        <p className="text-[10px] opacity-80 uppercase tracking-widest mt-1">
                             {isExpense ? 'Registrar Saída de Capital' : 'Registrar Entrada de Capital'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-zinc-200/50 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-zinc-400" />
+                    <button onClick={onClose} className="p-2 hover:bg-black/10 rounded-full transition-colors">
+                        <X className="w-5 h-5 text-white" />
                     </button>
                 </div>
 
@@ -343,8 +347,8 @@ export function AddTransactionModal({
                                         </div>
                                         {installments > 1 && amount && (
                                             <p className="text-[10px] text-violet-600 mt-3 font-bold uppercase tracking-widest flex items-center gap-2">
-                                                <div className="w-1 h-1 bg-violet-600 rounded-full" />
-                                                {installments} parcelas de R$ {(parseFloat(amount) / installments).toFixed(2)}
+                                                <div className="w-10 h-1 rounded-full" />
+                                                {installments} parcelas de {formatCurrency(parseFloat(amount) / installments, preferredCurrency)}
                                             </p>
                                         )}
                                     </motion.div>

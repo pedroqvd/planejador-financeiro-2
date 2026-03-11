@@ -9,20 +9,27 @@ vi.mock('@/lib/auth', () => ({
 vi.mock('@/lib/prisma', () => ({
     prisma: {
         transaction: {
-            findMany: vi.fn(),
-            count: vi.fn(),
-            create: vi.fn(),
-            findFirst: vi.fn(),
-            delete: vi.fn(),
-            deleteMany: vi.fn(),
-            aggregate: vi.fn().mockResolvedValue({ _avg: { amount: 100 } }),
+            findMany: vi.fn().mockResolvedValue([]),
+            count: vi.fn().mockResolvedValue(0),
+            create: vi.fn().mockResolvedValue({}),
+            findFirst: vi.fn().mockResolvedValue(null),
+            delete: vi.fn().mockResolvedValue({}),
+            deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+            aggregate: vi.fn().mockResolvedValue({ _avg: { amount: 0 } }),
+            update: vi.fn().mockResolvedValue({}),
         },
         budget: {
-            updateMany: vi.fn(),
-            findFirst: vi.fn(),
-            create: vi.fn(),
+            updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+            findFirst: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue({}),
         },
-        $transaction: vi.fn((actions) => Promise.all(actions)),
+        user: {
+            findUnique: vi.fn().mockResolvedValue({ fcmToken: 'test-token' }),
+        },
+        $transaction: vi.fn((actions) => {
+            if (typeof actions === 'function') return actions(vi.fn());
+            return Promise.all(actions);
+        }),
     },
 }));
 

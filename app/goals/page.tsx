@@ -5,6 +5,7 @@ import { Plus, Plane, Shield, Car, Target, CheckCircle2, Home, GraduationCap, He
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
+import { formatCurrency } from '@/lib/currency';
 // Dynamic import to avoid SSR crash during build
 const confetti = typeof window !== 'undefined' ? require('canvas-confetti') : null;
 
@@ -217,13 +218,18 @@ function AddGoalModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [preferredCurrency, setPreferredCurrency] = useState('BRL');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
   const loadGoals = useCallback(async () => {
     try {
       const res = await fetch('/api/goals');
-      if (res.ok) setGoals(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setGoals(data.goals || []);
+        setPreferredCurrency(data.preferredCurrency || 'BRL');
+      }
     } finally {
       setLoading(false);
     }
@@ -322,10 +328,10 @@ export default function GoalsPage() {
                   <h3 className="text-lg font-editorial font-bold text-zinc-900 mb-3">{goal.name}</h3>
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="text-lg font-editorial font-bold text-zinc-900">
-                      R$ {goal.current.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                      {formatCurrency(goal.current, preferredCurrency)}
                     </span>
                     <span className="text-xs text-zinc-500">
-                      de R$ {goal.target.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                      de {formatCurrency(goal.target, preferredCurrency)}
                     </span>
                   </div>
                   <div className="h-1.5 w-full bg-zinc-100 overflow-hidden mb-2">

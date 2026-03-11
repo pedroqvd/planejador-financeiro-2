@@ -11,12 +11,21 @@ export async function GET() {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const recurrences = await prisma.recurrence.findMany({
-        where: { userId: session.user.id },
-        orderBy: { nextDueDate: 'asc' },
-    });
+    const [recurrences, user] = await Promise.all([
+        prisma.recurrence.findMany({
+            where: { userId: session.user.id },
+            orderBy: { nextDueDate: 'asc' },
+        }),
+        prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { preferredCurrency: true }
+        })
+    ]);
 
-    return NextResponse.json(recurrences);
+    return NextResponse.json({
+        recurrences,
+        preferredCurrency: user?.preferredCurrency || 'BRL'
+    });
 }
 
 // POST — create a recurrence manually or from detection

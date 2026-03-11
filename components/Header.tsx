@@ -171,7 +171,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                         <p className="text-[10px] text-zinc-400 uppercase tracking-wider">{tx.category}</p>
                       </div>
                       <span className={`text-xs font-editorial font-bold ${tx.type === 'income' ? 'text-zinc-900' : 'text-zinc-500'}`}>
-                        {tx.type === 'income' ? '+' : '-'} R$ {tx.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {tx.type === 'income' ? '+' : '-'}{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </span>
                     </button>
                   ))}

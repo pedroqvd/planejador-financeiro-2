@@ -13,6 +13,7 @@ import {
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { formatCurrency as globalFormatCurrency } from '@/lib/currency';
 
 type Recurrence = {
     id: string;
@@ -46,10 +47,6 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
     'Outros': CreditCard,
 };
 
-function formatCurrency(value: number) {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
@@ -65,6 +62,7 @@ const COLOR_MAP: Record<string, string> = {
 
 export default function RecorrenciasPage() {
     const [recurrences, setRecurrences] = useState<Recurrence[]>([]);
+    const [preferredCurrency, setPreferredCurrency] = useState('BRL');
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [loading, setLoading] = useState(true);
     const [detecting, setDetecting] = useState(false);
@@ -73,7 +71,11 @@ export default function RecorrenciasPage() {
     const loadRecurrences = useCallback(async () => {
         try {
             const res = await fetch('/api/recurrences');
-            if (res.ok) setRecurrences(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                setRecurrences(data.recurrences || []);
+                setPreferredCurrency(data.preferredCurrency || 'BRL');
+            }
         } finally {
             setLoading(false);
         }
@@ -202,7 +204,7 @@ export default function RecorrenciasPage() {
                             <TrendingDown className="w-5 h-5 text-rose-600" />
                         </div>
                         <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">Despesas Fixas / mês</p>
-                        <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">{formatCurrency(totalFixedExpenses)}</p>
+                        <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">{globalFormatCurrency(totalFixedExpenses, preferredCurrency)}</p>
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -214,7 +216,7 @@ export default function RecorrenciasPage() {
                             <TrendingUp className="w-5 h-5 text-emerald-600" />
                         </div>
                         <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400">Receitas Fixas / mês</p>
-                        <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">{formatCurrency(totalFixedIncome)}</p>
+                        <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">{globalFormatCurrency(totalFixedIncome, preferredCurrency)}</p>
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}
@@ -267,7 +269,7 @@ export default function RecorrenciasPage() {
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <span className={clsx('text-sm font-bold', s.type === 'income' ? 'text-emerald-600' : 'text-rose-600')}>
-                                                {formatCurrency(s.amount)}
+                                                {globalFormatCurrency(s.amount, preferredCurrency)}
                                             </span>
                                             <div className="flex items-center gap-1">
                                                 <button
@@ -343,7 +345,7 @@ export default function RecorrenciasPage() {
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <span className={clsx('text-sm font-bold', rec.type === 'income' ? 'text-emerald-600' : 'text-rose-600')}>
-                                                {rec.type === 'income' ? '+' : '-'}{formatCurrency(rec.amount)}
+                                                {rec.type === 'income' ? '+' : '-'}{globalFormatCurrency(rec.amount, preferredCurrency)}
                                             </span>
                                             <button
                                                 onClick={() => handleDelete(rec.id)}
@@ -390,7 +392,7 @@ export default function RecorrenciasPage() {
                                                                 <div key={item.dataKey} className="flex items-center gap-2 mb-1">
                                                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                                                                     <span className="text-xs text-zinc-500">{item.dataKey === 'receitas' ? 'Receitas' : 'Despesas'}</span>
-                                                                    <span className="text-sm font-bold text-zinc-900">{formatCurrency(item.value)}</span>
+                                                                    <span className="text-sm font-bold text-zinc-900">{globalFormatCurrency(item.value, preferredCurrency)}</span>
                                                                 </div>
                                                             ))}
                                                         </div>

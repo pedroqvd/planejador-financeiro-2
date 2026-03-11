@@ -49,15 +49,26 @@ export async function POST() {
             where: { userId, month: currentMonth }
         });
 
+        // 4. Get user's preferred currency
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { fcmToken: true, preferredCurrency: true }
+        });
+
+        const currency = user?.preferredCurrency || 'BRL';
         const totalLimit = budgets.reduce((acc, b) => acc + b.limit, 0);
         const totalMonthlySpent = budgets.reduce((acc, b) => acc + b.spent, 0);
         const remainingBudget = Math.max(0, totalLimit - totalMonthlySpent);
 
-        // 4. Create Notification
+        // 5. Create Notification
+        const { formatCurrency } = await import('@/lib/currency');
         const title = 'Resumo do Dia 🌙';
+        const formattedTotalSpent = formatCurrency(totalSpent, currency);
+        const formattedRemaining = formatCurrency(remainingBudget, currency);
+
         const message = totalSpent > 0
-            ? `Hoje você gastou R$ ${totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Principal categoria: ${topCategory}. Restam R$ ${remainingBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} no orçamento do mês.`
-            : `Dia tranquilo! Você não registrou gastos hoje. Restam R$ ${remainingBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} no orçamento do mês.`;
+            ? `Hoje você gastou ${formattedTotalSpent}. Principal categoria: ${topCategory}. Restam ${formattedRemaining} no orçamento do mês.`
+            : `Dia tranquilo! Você não registrou gastos hoje. Restam ${formattedRemaining} no orçamento do mês.`;
 
         await prisma.notification.create({
             data: {
@@ -68,12 +79,7 @@ export async function POST() {
             }
         });
 
-        // 5. Send Push
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { fcmToken: true }
-        });
-
+        // 6. Send Push
         if (user?.fcmToken) {
             await sendPushNotification(user.fcmToken, title, message);
         }

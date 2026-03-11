@@ -7,6 +7,7 @@ import { Plus, Home, ShoppingCart, Car, Coffee, Wallet, Pencil, Sparkles } from 
 import { motion } from 'motion/react';
 import { clsx } from 'clsx';
 import { useState, useEffect, useCallback } from 'react';
+import { formatCurrency } from '@/lib/currency';
 
 type Budget = {
   id: string;
@@ -26,6 +27,7 @@ const categoryMeta: Record<string, { icon: React.ComponentType<{ className?: str
 
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [preferredCurrency, setPreferredCurrency] = useState('BRL');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showSmartModal, setShowSmartModal] = useState(false);
@@ -34,7 +36,11 @@ export default function BudgetPage() {
   const loadBudgets = useCallback(async () => {
     try {
       const res = await fetch('/api/budget');
-      if (res.ok) setBudgets(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setBudgets(data.budgets || []);
+        setPreferredCurrency(data.preferredCurrency || 'BRL');
+      }
     } finally {
       setLoading(false);
     }
@@ -148,10 +154,10 @@ export default function BudgetPage() {
                           <div className="flex items-center space-x-3">
                             <div className="text-right">
                               <p className={clsx('text-sm font-editorial font-bold', isOverBudget ? 'text-zinc-900' : 'text-zinc-900')}>
-                                R$ {budget.spent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                {formatCurrency(budget.spent, preferredCurrency)}
                               </p>
                               <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                                de R$ {budget.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                de {formatCurrency(budget.limit, preferredCurrency)}
                               </p>
                             </div>
                             <button
@@ -194,13 +200,13 @@ export default function BudgetPage() {
                 <div className="p-4 border border-zinc-200">
                   <p className="text-[10px] text-zinc-500 mb-1 uppercase tracking-wider">Total Gasto</p>
                   <p className="text-2xl font-editorial font-bold text-zinc-900">
-                    R$ {totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {formatCurrency(totalSpent, preferredCurrency)}
                   </p>
                 </div>
                 <div className="p-4 border border-zinc-200">
                   <p className="text-[10px] text-zinc-500 mb-1 uppercase tracking-wider">Orçamento Total</p>
                   <p className="text-2xl font-editorial font-bold text-zinc-900">
-                    R$ {totalLimit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {formatCurrency(totalLimit, preferredCurrency)}
                   </p>
                 </div>
                 <div className={clsx('p-4 border', available >= 0 ? 'border-zinc-200' : 'border-zinc-200 bg-zinc-50')}>
@@ -208,7 +214,7 @@ export default function BudgetPage() {
                     {available >= 0 ? 'Disponível' : 'Acima do Limite'}
                   </p>
                   <p className="text-2xl font-editorial font-bold text-zinc-900">
-                    R$ {Math.abs(available).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {formatCurrency(Math.abs(available), preferredCurrency)}
                   </p>
                 </div>
               </div>

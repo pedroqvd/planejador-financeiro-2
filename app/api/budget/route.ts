@@ -19,12 +19,20 @@ export async function GET() {
     } catch { /* dev fallback */ }
 
     const currentMonth = new Date().toISOString().slice(0, 7);
+    const [budgets, user] = await Promise.all([
+        prisma.budget.findMany({
+            where: { userId: session.user.id, month: currentMonth },
+        }),
+        prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { preferredCurrency: true }
+        })
+    ]);
 
-    const budgets = await prisma.budget.findMany({
-        where: { userId: session.user.id, month: currentMonth },
+    return NextResponse.json({
+        budgets,
+        preferredCurrency: user?.preferredCurrency || 'BRL'
     });
-
-    return NextResponse.json(budgets);
 }
 
 export async function POST(request: Request) {

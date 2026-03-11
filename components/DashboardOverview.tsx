@@ -17,16 +17,14 @@ type ChartData = {
   despesas: number;
 }[];
 
-function formatCurrency(value: number, currencyCode: string = 'BRL') {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: currencyCode });
-}
+import { formatCurrency } from '@/lib/currency';
 
 function formatCompact(value: number, currencyCode: string = 'BRL') {
-  if (Math.abs(value) >= 1000) {
     const symbol = formatCurrency(0, currencyCode).replace(/[\d,.\s]/g, '');
-    return `${symbol} ${(value / 1000).toFixed(1)}k`;
-  }
-  return formatCurrency(value, currencyCode);
+    if (Math.abs(value) >= 1000) {
+        return `${symbol} ${(value / 1000).toFixed(1)}k`;
+    }
+    return formatCurrency(value, currencyCode);
 }
 
 function Sparkline({ data, color }: { data: number[], color: string }) {

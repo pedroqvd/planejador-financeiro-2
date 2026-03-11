@@ -27,6 +27,7 @@ import {
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
+import { formatCurrency } from '@/lib/currency';
 
 type DashboardData = {
   stats: {
@@ -40,10 +41,6 @@ type DashboardData = {
   healthScore?: number;
   preferredCurrency?: string;
 };
-
-function formatCurrency(value: number, currencyCode: string = 'BRL') {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: currencyCode });
-}
 
 const monthNames: Record<string, number> = {
   'Jan': 0, 'Fev': 1, 'Mar': 2, 'Abr': 3, 'Mai': 4, 'Jun': 5,
