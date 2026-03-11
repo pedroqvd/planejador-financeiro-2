@@ -606,6 +606,7 @@ export default function LandingPage() {
                                 <li><Link href="/termos" className="hover:opacity-80 transition-opacity">Termos de Uso</Link></li>
                                 <li><Link href="/privacidade" className="hover:opacity-80 transition-opacity">Privacidade</Link></li>
                                 <li><Link href="/lgpd" className="hover:opacity-80 transition-opacity">LGPD</Link></li>
+                                <li><Link href="/afiliados/termos" className="hover:opacity-80 transition-opacity">Afiliados</Link></li>
                             </ul>
                         </div>
                         <div>

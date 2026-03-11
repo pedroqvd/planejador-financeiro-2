@@ -1,7 +1,17 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
-const publicRoutes = ['/login', '/register', '/landing', '/forgot-password', '/reset-password'];
+const publicRoutes = [
+    '/login', 
+    '/register', 
+    '/landing', 
+    '/forgot-password', 
+    '/reset-password',
+    '/termos',
+    '/privacidade',
+    '/lgpd',
+    '/afiliados/termos'
+];
 
 export default auth((req) => {
     const isLoggedIn = !!req.auth;
