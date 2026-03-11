@@ -70,7 +70,7 @@ export default function TermsOfServicePage() {
                                 2. Descrição do Serviço
                             </h2>
                             <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-                                O WealthCash fornece ferramentas de planejamento financeiro, agregação de contas, consultoria via IA e gestão de metas. O serviço é oferecido em modalidades "Free" (Grátis), "Pro" e "Premium", com diferentes níveis de funcionalidades conforme detalhado em nossa página de preços.
+                                O WealthCash fornece ferramentas de planejamento financeiro, agregação de contas, consultoria via IA e gestão de metas. O serviço é oferecido em modalidades &quot;Free&quot; (Grátis), &quot;Pro&quot; e &quot;Premium&quot;, com diferentes níveis de funcionalidades conforme detalhado em nossa página de preços.
                             </p>
                         </div>
 
