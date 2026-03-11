@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { RefreshCcw, CheckCircle2, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getSyncQueue, processSyncQueue } from '@/lib/sync';
@@ -8,15 +8,18 @@ import { clsx } from 'clsx';
 
 export function SyncManager() {
     const [syncing, setSyncing] = useState(false);
-    const [pendingCount, setPendingCount] = useState(0);
+    const [pendingCount, setPendingCount] = useState(() => {
+        if (typeof window === 'undefined') return 0;
+        return getSyncQueue().length;
+    });
     const [lastSyncStatus, setLastSyncStatus] = useState<'success' | 'none'>('none');
 
-    const updateQueueInfo = () => {
+    const updateQueueInfo = useCallback(() => {
         const queue = getSyncQueue();
         setPendingCount(queue.length);
-    };
+    }, []);
 
-    const handleSync = async () => {
+    const handleSync = useCallback(async () => {
         if (syncing || !navigator.onLine) return;
 
         const queue = getSyncQueue();
@@ -34,18 +37,18 @@ export function SyncManager() {
         });
         setSyncing(false);
         updateQueueInfo();
-    };
+    }, [syncing, updateQueueInfo, setLastSyncStatus]); // Added setLastSyncStatus to dependencies
 
     useEffect(() => {
-        updateQueueInfo();
+        const checkAndSync = () => {
+            updateQueueInfo();
+            if (navigator.onLine && !syncing) {
+                handleSync();
+            }
+        };
 
         // Set up polling and listeners
-        const interval = setInterval(() => {
-            if (!syncing) {
-                updateQueueInfo();
-                if (navigator.onLine) handleSync();
-            }
-        }, 10000); // Check every 10s
+        const interval = setInterval(checkAndSync, 10000); // Check every 10s
 
         window.addEventListener('online', handleSync);
         window.addEventListener('storage', updateQueueInfo); // Listen for changes from other tabs
@@ -55,7 +58,7 @@ export function SyncManager() {
             window.removeEventListener('online', handleSync);
             window.removeEventListener('storage', updateQueueInfo);
         };
-    }, []);
+    }, [handleSync, syncing, updateQueueInfo]); // Added updateQueueInfo to dependencies
 
     if (pendingCount === 0 && lastSyncStatus === 'none') return null;
 

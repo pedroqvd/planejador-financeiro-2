@@ -45,6 +45,11 @@ function formatCurrency(value: number, currencyCode: string = 'BRL') {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: currencyCode });
 }
 
+const monthNames: Record<string, number> = {
+  'Jan': 0, 'Fev': 1, 'Mar': 2, 'Abr': 3, 'Mai': 4, 'Jun': 5,
+  'Jul': 6, 'Ago': 7, 'Set': 8, 'Out': 9, 'Nov': 10, 'Dez': 11
+};
+
 export default function Dashboard() {
   const { data: session } = useSession();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -80,11 +85,6 @@ export default function Dashboard() {
     window.addEventListener('sync-complete', fetchDashboard);
     return () => window.removeEventListener('sync-complete', fetchDashboard);
   }, []);
-
-  const monthNames: Record<string, number> = {
-    'Jan': 0, 'Fev': 1, 'Mar': 2, 'Abr': 3, 'Mai': 4, 'Jun': 5,
-    'Jul': 6, 'Ago': 7, 'Set': 8, 'Out': 9, 'Nov': 10, 'Dez': 11
-  };
 
   const filteredTransactions = useMemo(() => {
     if (!dashboard?.recentTransactions) return [];

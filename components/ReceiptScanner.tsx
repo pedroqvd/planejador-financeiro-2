@@ -149,6 +149,7 @@ export function ReceiptScanner({ onClose, onSuccess }: { onClose: () => void; on
                         <div className="space-y-6">
                             {/* Image Preview & Scan Progress */}
                             <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={preview} alt="Receipt Preview" className="w-full h-full object-contain" />
 
                                 <AnimatePresence>
