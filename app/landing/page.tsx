@@ -90,10 +90,10 @@ export default function LandingPage() {
             {/* ===== NAVBAR ===== */}
             <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b" style={{ backgroundColor: 'var(--bg-cream)', borderColor: 'var(--border-color)', opacity: 0.97 }}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center space-x-2.5">
-                        <Logo className="w-9 h-9 text-zinc-900 dark:text-zinc-100" />
+                    <Link href="/landing" className="flex items-center space-x-2.5 group transition-all hover:opacity-80">
+                        <Logo className="w-9 h-9 text-zinc-900 dark:text-zinc-100 transition-transform group-hover:scale-110" />
                         <span className="font-editorial font-bold text-lg tracking-tight">WealthCash</span>
-                    </div>
+                    </Link>
                     <div className="hidden sm:flex items-center space-x-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
                         <a href="#features" className="hover:opacity-80 transition-opacity">Funcionalidades</a>
                         <a href="#pricing" className="hover:opacity-80 transition-opacity">Preços</a>
@@ -584,10 +584,10 @@ export default function LandingPage() {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                         <div className="col-span-2 sm:col-span-1">
-                            <div className="flex items-center space-x-2.5 mb-4">
-                                <Logo className="w-7 h-7 text-zinc-900 dark:text-zinc-100" />
+                            <Link href="/landing" className="flex items-center space-x-2.5 mb-4 group transition-all hover:opacity-80 inline-flex">
+                                <Logo className="w-7 h-7 text-zinc-900 dark:text-zinc-100 transition-transform group-hover:scale-110" />
                                 <span className="font-editorial font-bold text-sm">WealthCash</span>
-                            </div>
+                            </Link>
                             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                                 Planejamento financeiro inteligente para brasileiros que levam dinheiro a sério.
                             </p>

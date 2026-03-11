@@ -73,10 +73,13 @@ export default function RegisterPage() {
                 className="relative w-full max-w-md"
             >
                 {/* Logo */}
-                <div className="flex items-center justify-center space-x-3 mb-10">
-                    <Logo className="w-10 h-10 text-zinc-900" />
+                <Link 
+                    href="/landing" 
+                    className="flex items-center justify-center space-x-3 mb-10 group transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                    <Logo className="w-10 h-10 text-zinc-900 transition-transform group-hover:rotate-12" />
                     <span className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">WealthCash</span>
-                </div>
+                </Link>
 
                 {/* Card */}
                 <div className="bg-white border border-zinc-200 p-8">

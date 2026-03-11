@@ -39,12 +39,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   return (
     <>
       <div className="p-6 pt-10 pb-8 flex items-center justify-between">
-        <div className="flex items-center space-x-3 group">
-          <div className="p-2 bg-zinc-900 dark:bg-zinc-100 rounded-xl transition-transform group-hover:scale-110 shadow-lg">
-            <Logo className="w-6 h-6 text-white dark:text-zinc-900" />
+        <Link href="/" className="flex items-center space-x-3 group cursor-pointer transition-all hover:opacity-80">
+          <div className="p-2 bg-zinc-900 dark:bg-zinc-100 rounded-xl transition-transform group-hover:scale-110 shadow-lg group-hover:shadow-indigo-500/20">
+            <Logo className="w-6 h-6 text-white dark:text-zinc-900 transition-transform group-hover:-rotate-12" />
           </div>
           <span className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100">WealthCash</span>
-        </div>
+        </Link>
         {onClose && (
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-all md:hidden">
             <X className="w-5 h-5" />

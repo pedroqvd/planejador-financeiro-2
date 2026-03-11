@@ -14,10 +14,10 @@ export default function PrivacyPolicyPage() {
                         <ArrowLeft className="w-4 h-4" />
                         <span className="text-sm font-medium">Voltar</span>
                     </Link>
-                    <div className="flex items-center space-x-2">
-                        <Logo className="w-8 h-8" />
+                    <Link href="/landing" className="flex items-center space-x-2 group transition-all hover:opacity-80">
+                        <Logo className="w-8 h-8 transition-transform group-hover:scale-110" />
                         <span className="font-editorial font-bold text-lg">WealthCash</span>
-                    </div>
+                    </Link>
                 </div>
             </nav>
 
