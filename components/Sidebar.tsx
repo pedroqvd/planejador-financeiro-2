@@ -12,7 +12,9 @@ import {
   X,
   CreditCard,
   BarChart3,
-  RefreshCcw
+  RefreshCcw,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +22,7 @@ import { Logo } from '@/components/Logo';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { signOut } from 'next-auth/react';
+import { useState } from 'react';
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -33,17 +36,27 @@ const navItems = [
   { name: 'Plano Pro ✨', href: '/upgrade', icon: Sparkles },
 ];
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
+function SidebarContent({ onClose, collapsed, onToggleCollapse }: { onClose?: () => void; collapsed?: boolean; onToggleCollapse?: () => void }) {
   const pathname = usePathname();
 
   return (
     <>
-      <div className="p-6 pt-10 pb-8 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-3 group cursor-pointer transition-all hover:opacity-80">
-          <div className="p-2 bg-zinc-900 dark:bg-zinc-100 rounded-xl transition-transform group-hover:scale-110 shadow-lg group-hover:shadow-indigo-500/20">
+      {/* Header / Logo */}
+      <div className={clsx("flex items-center justify-between", collapsed ? "p-3 pt-8 pb-6" : "p-6 pt-10 pb-8")}>
+        <Link href="/" className={clsx("flex items-center group cursor-pointer transition-all hover:opacity-80", collapsed ? "justify-center w-full" : "space-x-3")}>
+          <div className="sidebar-logo-icon p-2 rounded-xl transition-transform group-hover:scale-110 shadow-lg group-hover:shadow-indigo-500/20">
             <Logo className="w-6 h-6 text-white dark:text-zinc-900 transition-transform group-hover:-rotate-12" />
           </div>
-          <span className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100">WealthCash</span>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 whitespace-nowrap overflow-hidden"
+            >
+              WealthCash
+            </motion.span>
+          )}
         </Link>
         {onClose && (
           <button onClick={onClose} className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-all md:hidden">
@@ -52,7 +65,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
+      {/* Navigation */}
+      <nav className={clsx("flex-1 space-y-1.5 overflow-y-auto", collapsed ? "px-2" : "px-3")}>
         {navItems.map((item, index) => {
           const isActive = pathname === item.href;
           return (
@@ -66,8 +80,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               <Link
                 href={item.href}
                 onClick={onClose}
+                title={collapsed ? item.name : undefined}
                 className={clsx(
-                  'group relative flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300',
+                  'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-300',
+                  collapsed ? 'justify-center px-3 py-3' : 'space-x-3 px-4 py-3',
                   isActive
                     ? 'text-zinc-900 dark:text-zinc-100'
                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-400/10'
@@ -90,52 +106,87 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 )}
 
                 <item.icon className={clsx(
-                  'w-[18px] h-[18px] transition-all duration-300 group-hover:scale-110 relative z-10',
+                  'w-[18px] h-[18px] transition-all duration-300 group-hover:scale-110 relative z-10 flex-shrink-0',
                   isActive ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400'
                 )} />
-                <span className="relative z-10">{item.name}</span>
+                {!collapsed && <span className="relative z-10 whitespace-nowrap">{item.name}</span>}
               </Link>
             </motion.div>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+      {/* Footer */}
+      <div className={clsx("border-t border-zinc-200 dark:border-zinc-800 space-y-2", collapsed ? "p-2" : "p-4")}>
+        {/* Collapse toggle (desktop only) */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className={clsx(
+              'w-full flex items-center rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-400/10 transition-all duration-200',
+              collapsed ? 'justify-center px-3 py-3' : 'space-x-3 px-4 py-3'
+            )}
+            title={collapsed ? 'Expandir menu' : 'Minimizar menu'}
+          >
+            {collapsed ? <ChevronsRight className="w-[18px] h-[18px]" /> : <ChevronsLeft className="w-[18px] h-[18px]" />}
+            {!collapsed && <span>Minimizar</span>}
+          </button>
+        )}
         <Link
           href="/settings"
           onClick={onClose}
+          title={collapsed ? 'Configurações' : undefined}
           className={clsx(
-            'flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+            'flex items-center rounded-xl text-sm font-medium transition-all duration-200',
+            collapsed ? 'justify-center px-3 py-3' : 'space-x-3 px-4 py-3',
             pathname === '/settings'
               ? 'text-zinc-900 dark:text-zinc-100 bg-zinc-900/5 dark:bg-white/10'
               : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-400/10'
           )}
         >
-          <Settings className={clsx('w-[18px] h-[18px]', pathname === '/settings' ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400')} />
-          <span>Configurações</span>
+          <Settings className={clsx('w-[18px] h-[18px] flex-shrink-0', pathname === '/settings' ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400')} />
+          {!collapsed && <span>Configurações</span>}
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
-          className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium text-zinc-500 hover:bg-zinc-400/10 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all duration-200"
+          title={collapsed ? 'Sair' : undefined}
+          className={clsx(
+            'w-full flex items-center rounded-xl text-sm font-medium text-zinc-500 hover:bg-zinc-400/10 hover:text-zinc-900 dark:hover:text-zinc-100 transition-all duration-200',
+            collapsed ? 'justify-center px-3 py-3' : 'space-x-3 px-4 py-3'
+          )}
         >
-          <LogOut className="w-[18px] h-[18px] text-zinc-400" />
-          <span>Sair</span>
+          <LogOut className="w-[18px] h-[18px] text-zinc-400 flex-shrink-0" />
+          {!collapsed && <span>Sair</span>}
         </button>
       </div>
     </>
   );
 }
 
-// Desktop sidebar
+// Desktop sidebar with collapse
 export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('wc-sidebar-collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleCollapse = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('wc-sidebar-collapsed', String(next));
+  };
+
   return (
     <motion.div
       initial={{ x: -20, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="hidden md:flex flex-col w-64 h-full border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl bg-white/80 dark:bg-black/80"
+      animate={{ x: 0, opacity: 1, width: collapsed ? 72 : 256 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="hidden md:flex flex-col h-full border-r border-zinc-200 dark:border-zinc-800/50 backdrop-blur-xl bg-white/80 dark:bg-black/80"
+      style={{ width: collapsed ? 72 : 256 }}
     >
-      <SidebarContent />
+      <SidebarContent collapsed={collapsed} onToggleCollapse={toggleCollapse} />
     </motion.div>
   );
 }

@@ -28,7 +28,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     user.password
                 );
 
-                if (!isValid) return null;
+                if (!isValid) {
+                    await logAudit({
+                        userId: user.id,
+                        action: 'LOGIN_FAILURE',
+                        details: 'Invalid password'
+                    });
+                    return null;
+                }
 
                 await logAudit({
                     userId: user.id,

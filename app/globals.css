@@ -207,9 +207,12 @@ body,
   color: var(--tw-text-zinc-500) !important;
 }
 
-.dark .bg-zinc-900 {
-  background-color: var(--tw-bg-zinc-900) !important;
-  color: var(--tw-text-white) !important;
+/* Sidebar logo icon - immune to dark mode bg overrides */
+.sidebar-logo-icon {
+  background-color: #18181b !important; /* zinc-900 */
+}
+.dark .sidebar-logo-icon {
+  background-color: #f4f4f5 !important; /* zinc-100 */
 }
 
 .bg-zinc-900 .text-white {
