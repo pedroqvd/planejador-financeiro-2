@@ -14,6 +14,11 @@ vi.mock('motion/react', () => {
     ));
     MockP.displayName = 'motion.p';
 
+    const MockCircle = React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<SVGCircleElement>) => (
+        React.createElement('circle', { ...filterMotionProps(props), ref }, children)
+    ));
+    MockCircle.displayName = 'motion.circle';
+
     const MockPresence = ({ children }: React.PropsWithChildren) => React.createElement(React.Fragment, null, children);
     MockPresence.displayName = 'AnimatePresence';
 
@@ -21,6 +26,7 @@ vi.mock('motion/react', () => {
         motion: {
             div: MockDiv,
             p: MockP,
+            circle: MockCircle,
         },
         AnimatePresence: MockPresence,
     };
@@ -61,7 +67,7 @@ describe('DashboardOverview', () => {
         // Check new card labels are in the document
         expect(screen.getByText(/Receitas do mês/i)).toBeInTheDocument();
         expect(screen.getByText(/Despesas do mês/i)).toBeInTheDocument();
-        expect(screen.getByText(/Saldo do mês/i)).toBeInTheDocument();
+        expect(screen.getByText(/Saldo Líquido/i)).toBeInTheDocument();
         expect(screen.getByText(/Saúde Financeira/i)).toBeInTheDocument();
     });
 
@@ -94,6 +100,6 @@ describe('DashboardOverview', () => {
         // The balance card should have dark background (bg-zinc-900)
         const darkCard = container.querySelector('.bg-zinc-900');
         expect(darkCard).toBeInTheDocument();
-        expect(darkCard).toHaveTextContent(/Saldo do mês/i);
+        expect(darkCard).toHaveTextContent(/Saldo Líquido/i);
     });
 });

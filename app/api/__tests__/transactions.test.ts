@@ -14,10 +14,15 @@ vi.mock('@/lib/prisma', () => ({
             create: vi.fn(),
             findFirst: vi.fn(),
             delete: vi.fn(),
+            deleteMany: vi.fn(),
+            aggregate: vi.fn().mockResolvedValue({ _avg: { amount: 100 } }),
         },
         budget: {
             updateMany: vi.fn(),
+            findFirst: vi.fn(),
+            create: vi.fn(),
         },
+        $transaction: vi.fn((actions) => Promise.all(actions)),
     },
 }));
 
@@ -132,7 +137,7 @@ describe('POST /api/transactions', () => {
     });
 
     it('should update budget when creating expense', async () => {
-        (prisma.transaction.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'tx-1', type: 'expense' });
+        (prisma.transaction.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'tx-1', type: 'expense', category: 'Alimentação', date: new Date() });
         (prisma.budget.updateMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ count: 1 });
 
         await POST(makeRequest('POST', { name: 'Test', category: 'Alimentação', amount: 100, type: 'expense' }));
@@ -156,17 +161,17 @@ describe('DELETE /api/transactions', () => {
     });
 
     it('should return 404 if transaction not found (IDOR protection)', async () => {
-        (prisma.transaction.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+        (prisma.transaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
 
         const res = await DELETE(makeRequest('DELETE', { id: 'tx-nonexistent' }));
         expect(res.status).toBe(404);
     });
 
     it('should delete transaction and return success', async () => {
-        (prisma.transaction.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        (prisma.transaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([{
             id: 'tx-1', userId: 'user-1', type: 'income', amount: 500, category: 'Salário', date: new Date(),
-        });
-        (prisma.transaction.delete as ReturnType<typeof vi.fn>).mockResolvedValueOnce({});
+        }]);
+        (prisma.transaction.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ count: 1 });
 
         const res = await DELETE(makeRequest('DELETE', { id: 'tx-1' }));
         expect(res.status).toBe(200);
@@ -175,10 +180,10 @@ describe('DELETE /api/transactions', () => {
     });
 
     it('should decrement budget when deleting expense', async () => {
-        (prisma.transaction.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        (prisma.transaction.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([{
             id: 'tx-1', userId: 'user-1', type: 'expense', amount: 100, category: 'Alimentação', date: new Date(),
-        });
-        (prisma.transaction.delete as ReturnType<typeof vi.fn>).mockResolvedValueOnce({});
+        }]);
+        (prisma.transaction.deleteMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ count: 1 });
         (prisma.budget.updateMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ count: 1 });
 
         await DELETE(makeRequest('DELETE', { id: 'tx-1' }));
