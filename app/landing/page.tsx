@@ -1,14 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useMotionValue, useTransform, animate } from 'motion/react';
+import { motion, animate } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import {
     ArrowRight, Shield, Zap, Brain, Upload, BarChart3, Target,
     ChevronRight, Check, Sparkles, TrendingUp, CreditCard, Wallet,
-    RefreshCcw, PieChart, Lock, Eye, Star, Users, ArrowUpRight
+    RefreshCcw, PieChart, Lock, Eye, Star, Users, ArrowUpRight,
+    Moon, Sun
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { useTheme } from '@/components/ThemeProvider';
 
 /* ====== Animation presets ====== */
 const fadeUp = {
@@ -85,6 +87,7 @@ function HeroChart() {
 }
 
 export default function LandingPage() {
+    const { theme, toggleTheme } = useTheme();
     return (
         <div className="min-h-screen overflow-x-hidden" style={{ backgroundColor: 'var(--bg-cream)', color: 'var(--text-primary)' }}>
             {/* ===== NAVBAR ===== */}
@@ -99,7 +102,24 @@ export default function LandingPage() {
                         <a href="#pricing" className="hover:opacity-80 transition-opacity">Preços</a>
                         <a href="#security" className="hover:opacity-80 transition-opacity">Segurança</a>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                        {/* Theme Toggle */}
+                        <motion.button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-full transition-all duration-200 hover:scale-110"
+                            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+                            whileTap={{ scale: 0.9 }}
+                            title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+                        >
+                            <motion.div
+                                key={theme}
+                                initial={{ rotate: -90, opacity: 0 }}
+                                animate={{ rotate: 0, opacity: 1 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                            </motion.div>
+                        </motion.button>
                         <Link href="/login" className="text-sm font-medium hover:opacity-80 transition-opacity hidden sm:block" style={{ color: 'var(--text-secondary)' }}>
                             Entrar
                         </Link>

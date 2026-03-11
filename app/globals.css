@@ -60,39 +60,39 @@
 }
 
 .dark {
-  /* Premium Deep Slate Theme */
+  /* Premium Deep Dark Theme - Improved Contrast */
   --accent-gold: #e2c792;
   --accent-ink: #818cf8;
-  --bg-cream: #0f172a;
-  --bg-sidebar: #0b1120;
-  --bg-card: #1e293b;
-  --bg-input: #1e293b;
-  --border-color: #334155;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
+  --bg-cream: #0d1117;
+  --bg-sidebar: #090d13;
+  --bg-card: #161b22;
+  --bg-input: #21262d;
+  --border-color: #30363d;
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
 
   /* Generic tailwind overrides for Dark Mode */
-  --tw-bg-zinc-50: #0f172a;
-  --tw-bg-zinc-100: #1e293b;
-  --tw-bg-zinc-900: #e2e8f0;
-  --tw-text-zinc-900: #f1f5f9;
-  --tw-text-zinc-800: #e2e8f0;
-  --tw-text-zinc-700: #cbd5e1;
-  --tw-text-zinc-600: #94a3b8;
-  --tw-text-zinc-500: #64748b;
-  --tw-text-white: #0f172a;
-  --tw-border-zinc-100: #1e293b;
-  --tw-bg-white-90: rgba(15, 23, 42, 0.92);
-  --tw-thumb: #334155;
-  --tw-thumb-hover: #475569;
+  --tw-bg-zinc-50: #161b22;
+  --tw-bg-zinc-100: #21262d;
+  --tw-bg-zinc-900: #f0f6fc;
+  --tw-text-zinc-900: #f0f6fc;
+  --tw-text-zinc-800: #e6edf3;
+  --tw-text-zinc-700: #c9d1d9;
+  --tw-text-zinc-600: #8b949e;
+  --tw-text-zinc-500: #6e7681;
+  --tw-text-white: #0d1117;
+  --tw-border-zinc-100: #30363d;
+  --tw-bg-white-90: rgba(13, 17, 23, 0.92);
+  --tw-thumb: #30363d;
+  --tw-thumb-hover: #3d444d;
   --tw-selection-bg: #312e81;
   --tw-selection-text: #e0e7ff;
 
   /* Chart-specific */
-  --chart-grid: #1e293b;
-  --chart-tick: #64748b;
-  --tooltip-bg: #1e293b;
-  --tooltip-border: #334155;
+  --chart-grid: #21262d;
+  --chart-tick: #6e7681;
+  --tooltip-bg: #21262d;
+  --tooltip-border: #30363d;
 
   /* Tinted accent backgrounds for dark mode */
   --emerald-tint: #064e3b;
@@ -173,7 +173,41 @@ body,
   background-color: var(--tw-border-zinc-100) !important;
 }
 
-.bg-zinc-900 {
+/* Stronger dark mode overrides for legal pages */
+.dark .text-zinc-600 {
+  color: var(--tw-text-zinc-600) !important;
+}
+
+.dark .bg-zinc-50 {
+  background-color: var(--tw-bg-zinc-100) !important;
+  border-color: var(--tw-border-zinc-100) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--bg-card) !important;
+}
+
+.dark .border-zinc-100 {
+  border-color: var(--tw-border-zinc-100) !important;
+}
+
+.dark .border-zinc-200 {
+  border-color: var(--border-color) !important;
+}
+
+.dark h1, .dark h2, .dark h3 {
+  color: var(--text-primary) !important;
+}
+
+.dark p, .dark li, .dark span {
+  color: var(--text-primary);
+}
+
+.dark .text-zinc-400 {
+  color: var(--tw-text-zinc-500) !important;
+}
+
+.dark .bg-zinc-900 {
   background-color: var(--tw-bg-zinc-900) !important;
   color: var(--tw-text-white) !important;
 }
