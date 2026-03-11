@@ -34,6 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     name: user.name,
                     email: user.email,
                     plan: user.plan,
+                    preferredCurrency: (user as any).preferredCurrency || 'BRL',
                 };
             },
         }),
@@ -49,21 +50,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.id = user.id;
                 token.plan = (user as { plan?: string }).plan || 'free';
+                token.preferredCurrency = (user as any).preferredCurrency || 'BRL';
             }
-            // Refresh plan from DB on session update
+            // Refresh plan and currency from DB on session update
             if (trigger === 'update' && token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
-                    select: { plan: true },
+                    // @ts-ignore
+                    select: { plan: true, preferredCurrency: true },
                 });
-                if (dbUser) token.plan = dbUser.plan;
+                if (dbUser) {
+                    token.plan = dbUser.plan;
+                    token.preferredCurrency = (dbUser as any).preferredCurrency || 'BRL';
+                }
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string;
-                (session.user as { plan?: string }).plan = token.plan as string;
+                (session.user as any).plan = token.plan as string;
+                (session.user as any).preferredCurrency = token.preferredCurrency as string;
             }
             return session;
         },

@@ -4,6 +4,11 @@ import { useSession } from 'next-auth/react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { DashboardOverview } from '@/components/DashboardOverview';
 import { Transactions } from '@/components/Transactions';
+import { Charts } from '@/components/Charts';
+import { ReceiptScanner } from '@/components/ReceiptScanner';
+import { SyncStatus } from '@/components/SyncStatus';
+import { OpenFinanceCTA } from '@/components/OpenFinanceCTA';
+import { CashFlowForecast } from '@/components/CashFlowForecast';
 import { BudgetProgress } from '@/components/BudgetProgress';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { SmartBudgetModal } from '@/components/SmartBudgetModal';
@@ -15,9 +20,11 @@ import {
   PiggyBank,
   Upload,
   Sparkles,
-  Bot
+  Bot,
+  X,
+  Scan
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
 
@@ -30,10 +37,12 @@ type DashboardData = {
   };
   recentTransactions: any[];
   budgets: any[];
+  healthScore?: number;
+  preferredCurrency?: string;
 };
 
-function formatCurrency(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function formatCurrency(value: number, currencyCode: string = 'BRL') {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: currencyCode });
 }
 
 export default function Dashboard() {
@@ -42,28 +51,50 @@ export default function Dashboard() {
   const [aiInsight, setAiInsight] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [showSmartBudgetModal, setShowSmartBudgetModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showScanModal, setShowScanModal] = useState(false);
   const [showAiCoach, setShowAiCoach] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [dashRes, aiRes] = await Promise.all([
-          fetch('/api/dashboard'),
-          fetch('/api/ai/coach')
-        ]);
+  const fetchDashboard = async () => {
+    try {
+      const [dashRes, aiRes] = await Promise.all([
+        fetch('/api/dashboard'),
+        fetch('/api/ai/coach')
+      ]);
 
-        if (dashRes.ok) setDashboard(await dashRes.json());
-        if (aiRes.ok) setAiInsight(await aiRes.json());
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
+      if (dashRes.ok) setDashboard(await dashRes.json());
+      if (aiRes.ok) setAiInsight(await aiRes.json());
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
     }
-    fetchData();
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+
+    // Listen for sync completions to refresh data
+    window.addEventListener('sync-complete', fetchDashboard);
+    return () => window.removeEventListener('sync-complete', fetchDashboard);
   }, []);
+
+  const monthNames: Record<string, number> = {
+    'Jan': 0, 'Fev': 1, 'Mar': 2, 'Abr': 3, 'Mai': 4, 'Jun': 5,
+    'Jul': 6, 'Ago': 7, 'Set': 8, 'Out': 9, 'Nov': 10, 'Dez': 11
+  };
+
+  const filteredTransactions = useMemo(() => {
+    if (!dashboard?.recentTransactions) return [];
+    if (!selectedMonth) return dashboard.recentTransactions;
+
+    return dashboard.recentTransactions.filter(tx => {
+      const txDate = new Date(tx.date);
+      return monthNames[selectedMonth] === txDate.getMonth();
+    });
+  }, [dashboard, selectedMonth]);
 
   useEffect(() => {
     // Only show coach if we have an insight and plan is not free
@@ -154,6 +185,13 @@ export default function Dashboard() {
               <span className="hidden sm:inline">Importar</span>
             </button>
             <button
+              onClick={() => setShowScanModal(true)}
+              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 rounded-none"
+            >
+              <Scan className="w-4 h-4" />
+              <span className="hidden sm:inline">Escanear IA</span>
+            </button>
+            <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 dark:hover:bg-white transition-all duration-200 rounded-none shadow-xl"
             >
@@ -163,14 +201,35 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
+        <SyncStatus />
+        <OpenFinanceCTA />
+
         {/* Top Overview Cards */}
-        <DashboardOverview stats={dashboard?.stats || null} chartData={(dashboard as any)?.chartData} />
+        <DashboardOverview
+          stats={dashboard?.stats || null}
+          chartData={(dashboard as any)?.chartData}
+          healthScore={dashboard?.healthScore}
+          preferredCurrency={dashboard?.preferredCurrency}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* Main Content (Transactions) */}
           <div className="lg:col-span-2 space-y-4">
-            <Transactions data={dashboard?.recentTransactions || []} limit={5} />
+            <Charts
+              data={(dashboard as any)?.chartData || []}
+              loading={loading}
+              onSelect={(month) => setSelectedMonth(month === selectedMonth ? null : month)}
+              preferredCurrency={dashboard?.preferredCurrency}
+            />
+            <CashFlowForecast preferredCurrency={dashboard?.preferredCurrency} />
+            <Transactions
+              data={filteredTransactions}
+              limit={selectedMonth ? undefined : 6}
+              onDelete={fetchDashboard}
+              onBulkDelete={fetchDashboard}
+              preferredCurrency={dashboard?.preferredCurrency}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Patrimônio Líquido */}
@@ -189,7 +248,7 @@ export default function Dashboard() {
                       Patrimônio Líquido
                     </p>
                     <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
-                      {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth) : '—'}
+                      {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth, dashboard.preferredCurrency) : '—'}
                     </p>
                   </div>
                 </div>
@@ -211,7 +270,7 @@ export default function Dashboard() {
                       Investimentos
                     </p>
                     <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
-                      {dashboard?.stats ? formatCurrency(dashboard.stats.investments) : '—'}
+                      {dashboard?.stats ? formatCurrency(dashboard.stats.investments, dashboard.preferredCurrency) : '—'}
                     </p>
                   </div>
                 </div>
@@ -221,7 +280,10 @@ export default function Dashboard() {
 
           {/* Sidebar Area (Budgets) */}
           <div className="space-y-4">
-            <BudgetProgress budgets={dashboard?.budgets || []} />
+            <BudgetProgress
+              budgets={dashboard?.budgets || []}
+              preferredCurrency={dashboard?.preferredCurrency}
+            />
 
             {/* AI Coach Card */}
             <AnimatePresence>
@@ -310,26 +372,16 @@ export default function Dashboard() {
             }}
           />
         )}
+        {showScanModal && (
+          <ReceiptScanner
+            onClose={() => setShowScanModal(false)}
+            onSuccess={() => {
+              setShowScanModal(false);
+              fetchDashboard();
+            }}
+          />
+        )}
       </AnimatePresence>
     </DashboardLayout>
-  );
-}
-
-function X({ className }: { className: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-    </svg>
   );
 }

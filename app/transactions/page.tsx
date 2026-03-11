@@ -9,6 +9,7 @@ import { motion } from 'motion/react';
 import { useState, useEffect, useCallback } from 'react';
 import { generatePDF } from '@/lib/pdf-report';
 import { useToast } from '@/components/Toast';
+import { useSession } from 'next-auth/react';
 
 type Transaction = {
   id: string;
@@ -34,6 +35,9 @@ function getMonthOptions() {
 
 export default function TransactionsPage() {
   const { toast } = useToast();
+  const { data: session } = useSession();
+  const preferredCurrency = (session?.user as any)?.preferredCurrency || 'BRL';
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -172,19 +176,19 @@ export default function TransactionsPage() {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-5">
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Total Receitas</p>
             <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">
-              R$ {totalIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: preferredCurrency, minimumFractionDigits: 2 }).format(totalIncome)}
             </p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-5">
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Total Despesas</p>
             <p className="text-xl font-editorial font-bold text-zinc-900 mt-1">
-              R$ {totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: preferredCurrency, minimumFractionDigits: 2 }).format(totalExpense)}
             </p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-5">
             <p className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Saldo</p>
             <p className="text-xl font-editorial font-bold mt-1 text-zinc-900">
-              R$ {(totalIncome - totalExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: preferredCurrency, minimumFractionDigits: 2 }).format(totalIncome - totalExpense)}
             </p>
           </motion.div>
         </div>
@@ -229,7 +233,7 @@ export default function TransactionsPage() {
                 {filtered.length} transação{filtered.length !== 1 ? 'ões' : ''} • Página {page} de {totalPages}
               </p>
             </div>
-            <Transactions data={paginated} onEdit={handleEdit} onDelete={handleDelete} />
+            <Transactions data={paginated} onEdit={handleEdit} onDelete={handleDelete} preferredCurrency={preferredCurrency} />
 
             {/* Pagination */}
             {totalPages > 1 && (

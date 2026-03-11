@@ -86,6 +86,7 @@ export async function POST(request: Request) {
         const type = String(body.type || '');
         const paymentMethod = String(body.paymentMethod || 'account');
         const installments = parseInt(body.installments || '1');
+        const currency = String(body.currency || 'BRL');
 
         if (!name || !category) {
             return NextResponse.json({ error: 'Nome e categoria são obrigatórios.' }, { status: 400 });
@@ -124,6 +125,7 @@ export async function POST(request: Request) {
                     type,
                     paymentMethod,
                     installments,
+                    currency,
                     userId: session.user.id,
                     date: txDate,
                 });
@@ -136,13 +138,17 @@ export async function POST(request: Request) {
                 type,
                 paymentMethod,
                 installments: 1,
+                currency,
                 userId: session.user.id,
                 date: baseDate,
             });
         }
 
         const createdTxs = await prisma.$transaction(
-            txsToCreate.map(tx => prisma.transaction.create({ data: tx }))
+            txsToCreate.map(tx => {
+                // @ts-ignore: currency added in schema but might not be in client yet
+                return prisma.transaction.create({ data: tx });
+            })
         );
 
         if (type === 'expense') {
@@ -249,6 +255,7 @@ export async function PUT(request: Request) {
         const category = sanitize(String(body.category || ''));
         const amount = parseFloat(body.amount);
         const type = String(body.type || '');
+        const currency = String(body.currency || 'BRL');
 
         if (!name || !category) {
             return NextResponse.json({ error: 'Nome e categoria são obrigatórios.' }, { status: 400 });
@@ -274,7 +281,8 @@ export async function PUT(request: Request) {
 
         const updated = await prisma.transaction.update({
             where: { id },
-            data: { name, category, amount, type },
+            // @ts-ignore
+            data: { name, category, amount, type, currency },
         });
 
         // Apply new budget impact
@@ -300,38 +308,52 @@ export async function DELETE(request: Request) {
     }
 
     try {
-        const { id } = await request.json();
-        if (!id || typeof id !== 'string') {
-            return NextResponse.json({ error: 'ID é obrigatório.' }, { status: 400 });
+        const body = await request.json();
+        const { id, ids } = body;
+
+        const idsToDelete = ids && Array.isArray(ids) ? ids : (id ? [id] : []);
+
+        if (idsToDelete.length === 0) {
+            return NextResponse.json({ error: 'ID ou IDs são obrigatórios.' }, { status: 400 });
         }
 
-        // IDOR protection: verify ownership
-        const transaction = await prisma.transaction.findFirst({
-            where: { id, userId: session.user.id },
+        // Verify ownership and get data for all requested transactions
+        const transactions = await prisma.transaction.findMany({
+            where: {
+                id: { in: idsToDelete },
+                userId: session.user.id
+            }
         });
 
-        if (!transaction) {
-            return NextResponse.json({ error: 'Transação não encontrada.' }, { status: 404 });
+        if (transactions.length === 0) {
+            return NextResponse.json({ error: 'Nenhuma transação encontrada.' }, { status: 404 });
         }
 
-        // Decrement budget if expense
-        if (transaction.type === 'expense') {
-            const txMonth = new Date(transaction.date).toISOString().slice(0, 7);
-            await prisma.budget.updateMany({
-                where: {
-                    userId: session.user.id,
-                    category: transaction.category,
-                    month: txMonth,
-                },
-                data: {
-                    spent: { decrement: transaction.amount },
-                },
-            });
+        // Revert budget impact for each expense
+        for (const transaction of transactions) {
+            if (transaction.type === 'expense') {
+                const txMonth = new Date(transaction.date).toISOString().slice(0, 7);
+                await prisma.budget.updateMany({
+                    where: {
+                        userId: session.user.id,
+                        category: transaction.category,
+                        month: txMonth,
+                    },
+                    data: {
+                        spent: { decrement: transaction.amount },
+                    },
+                });
+            }
         }
 
-        await prisma.transaction.delete({ where: { id } });
+        // Finalize deletion
+        const { count } = await prisma.transaction.deleteMany({
+            where: {
+                id: { in: transactions.map(t => t.id) }
+            }
+        });
 
-        return NextResponse.json({ message: 'Transação removida.' });
+        return NextResponse.json({ message: `${count} transações removidas.` });
     } catch (error) {
         console.error('Delete transaction error:', error);
         return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });

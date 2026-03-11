@@ -19,7 +19,7 @@ export async function PUT(request: Request) {
         try { body = await request.json(); }
         catch { return NextResponse.json({ error: 'Corpo da requisição inválido.' }, { status: 400 }); }
 
-        const { name } = body;
+        const { name, preferredCurrency } = body;
 
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
             return NextResponse.json({ error: 'Nome é obrigatório.' }, { status: 400 });
@@ -35,9 +35,16 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Nome deve ter pelo menos 2 caracteres.' }, { status: 400 });
         }
 
+        const dataToUpdate: any = { name: sanitized };
+
+        if (preferredCurrency && ['BRL', 'USD', 'EUR', 'GBP', 'CAD'].includes(preferredCurrency)) {
+            dataToUpdate.preferredCurrency = preferredCurrency;
+        }
+
+        // @ts-ignore
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { name: sanitized },
+            data: dataToUpdate,
         });
 
         return NextResponse.json({ message: 'Perfil atualizado com sucesso!' });

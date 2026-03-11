@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { SyncManager } from '@/components/SyncManager';
+
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -15,6 +17,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
+      <SyncManager />
       <MobileSidebar open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
       <div className="flex flex-col flex-1 overflow-hidden">
         <OfflineStatus />

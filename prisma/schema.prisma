@@ -22,6 +22,7 @@ model User {
   referralCode         String        @unique @default(cuid())
   referredBy           String?
   referralsCount       Int           @default(0)
+  preferredCurrency    String        @default("BRL") // Base currency for dashboard
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   transactions         Transaction[]
@@ -41,6 +42,7 @@ model Transaction {
   name     String
   category String
   amount   Float
+  currency String   @default("BRL")
   type                String
   paymentMethod       String   @default("account") // account, credit_card
   installments        Int      @default(1)
@@ -58,6 +60,7 @@ model Budget {
   category String
   limit    Float
   spent    Float  @default(0)
+  currency String @default("BRL")
   month    String
   userId   String
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -72,6 +75,7 @@ model Goal {
   icon              String   @default("Target")
   target            Float
   current           Float    @default(0)
+  currency          String   @default("BRL")
   deadline          String
   monthlySuggestion Float    @default(0)
   color             String   @default("sky")
@@ -144,6 +148,7 @@ model Recurrence {
   name        String
   category    String   @default("Outros")
   amount      Float
+  currency    String   @default("BRL")
   type        String   // 'expense' | 'income'
   frequency   String   @default("monthly") // 'monthly' | 'weekly' | 'annual'
   nextDueDate DateTime

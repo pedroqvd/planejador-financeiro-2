@@ -81,6 +81,7 @@ export default function SettingsPage() {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [preferredCurrency, setPreferredCurrency] = useState((session?.user as any)?.preferredCurrency || 'BRL');
     const [photo, setPhoto] = useState<string | null>(null);
     const [profileMsg, setProfileMsg] = useState('');
     const [passwordMsg, setPasswordMsg] = useState('');
@@ -121,7 +122,7 @@ export default function SettingsPage() {
             const res = await fetch('/api/settings/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name.trim() }),
+                body: JSON.stringify({ name: name.trim(), preferredCurrency }),
             });
             const data = await res.json();
 
@@ -134,8 +135,8 @@ export default function SettingsPage() {
             }
 
             if (res.ok) {
-                setProfileMsg('Perfil atualizado! As mudanças visuais podem demorar um pouco devido ao cache.');
-                update({ name: name.trim(), image: photo });
+                setProfileMsg('Perfil e moeda atualizados! As mudanças visuais podem demorar um pouco devido ao cache.');
+                update({ name: name.trim(), image: photo }); // Session context might not have currency but next session fetch will
             } else {
                 setProfileError(data.error || 'Erro ao salvar.');
             }
@@ -342,6 +343,21 @@ export default function SettingsPage() {
                                 className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition-all bg-transparent"
                                 maxLength={100}
                             />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Moeda Principal (Dashboard)</label>
+                            <select
+                                value={preferredCurrency}
+                                onChange={(e) => setPreferredCurrency(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-zinc-200 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition-all bg-white cursor-pointer"
+                            >
+                                <option value="BRL">BRL - Real Brasileiro (R$)</option>
+                                <option value="USD">USD - Dólar Americano ($)</option>
+                                <option value="EUR">EUR - Euro (€)</option>
+                                <option value="GBP">GBP - Libra Esterlina (£)</option>
+                                <option value="CAD">CAD - Dólar Canadense (C$)</option>
+                            </select>
+                            <p className="text-[10px] text-zinc-400 mt-1 uppercase tracking-wider">Como seus totais serão exibidos.</p>
                         </div>
                         <div>
                             <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Email</label>

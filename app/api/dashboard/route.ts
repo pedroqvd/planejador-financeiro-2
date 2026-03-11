@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit } from '@/lib/rate-limit';
+import { getExchangeRates } from '@/lib/currency';
 
 export async function GET() {
     const session = await auth();
@@ -18,49 +19,55 @@ export async function GET() {
     const now = new Date();
     const currentMonth = now.toISOString().slice(0, 7);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    // Parallel queries for better performance
-    const [incomeResult, expenseResult, goalsResult, userRecord] = await Promise.all([
-        prisma.transaction.aggregate({
-            where: { userId, type: 'income', date: { gte: startOfMonth } },
-            _sum: { amount: true },
-        }),
-        prisma.transaction.aggregate({
-            where: { userId, type: 'expense', date: { gte: startOfMonth } },
-            _sum: { amount: true },
-        }),
-        prisma.goal.aggregate({
-            where: { userId },
-            _sum: { current: true },
-        }),
-        prisma.user.findUnique({
-            where: { id: userId },
-            select: { referralCode: true, referralsCount: true },
-        }),
-    ]);
-
-    const income = incomeResult._sum.amount || 0;
-    const expenses = expenseResult._sum.amount || 0;
-    const investments = goalsResult._sum.current || 0;
-    const netWorth = income - expenses + investments;
-
-    // Get monthly trend data (last 6 months) — aggregated in the database for performance
     const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    const monthlyAgg = await prisma.transaction.groupBy({
-        by: ['type'],
-        where: { userId, date: { gte: sixMonthsAgo } },
-        _sum: { amount: true },
-        // Prisma groupBy doesn't support grouping by date parts directly,
-        // so we fetch per-type totals and also need date info.
-        // Alternative: use a raw query. For now, we use a lighter findMany with only needed fields.
-    });
+    // Parallel queries for better performance
+    const [userRecord, recentTx, goals, budgets] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: userId },
+            // @ts-ignore: preferredCurrency was added but client generation might be pending
+            select: { referralCode: true, referralsCount: true, preferredCurrency: true },
+        }),
+        prisma.transaction.findMany({
+            where: { userId, date: { gte: sixMonthsAgo } },
+            // @ts-ignore: currency might not be in client yet
+            select: { amount: true, type: true, date: true, currency: true }
+        }),
+        prisma.goal.findMany({
+            where: { userId },
+            // @ts-ignore
+            select: { current: true, currency: true }
+        }),
+        prisma.budget.findMany({
+            where: { userId, month: currentMonth },
+            // @ts-ignore
+            select: { limit: true, spent: true, category: true, currency: true, month: true }
+        })
+    ]);
 
-    // Prisma groupBy can't group by date.month natively, so we still fetch rows but ONLY select minimal fields
-    const recentTx = await prisma.transaction.findMany({
-        where: { userId, date: { gte: sixMonthsAgo } },
-        select: { amount: true, type: true, date: true }
-    });
+    const user = (userRecord as any) || { referralCode: '', referralsCount: 0, preferredCurrency: 'BRL' };
+    const preferredCurrency = user.preferredCurrency;
+
+    // Fetch exchange rates once for the whole dashboard calculation
+    const exchangeData = await getExchangeRates();
+    const rates = exchangeData.rates;
+
+    // Helper to convert inline
+    const toBase = (amount: number, fromCurrency: string = 'BRL') => {
+        if (!amount) return 0;
+        const fromRate = rates[fromCurrency] || 1;
+        const toRate = rates[preferredCurrency] || 1;
+        return (amount / fromRate) * toRate;
+    };
+
+    let income = 0;
+    let expenses = 0;
+    let investments = 0;
+
+    // Convert and sum goals
+    for (const goal of goals) {
+        investments += toBase(goal.current, (goal as any).currency || 'BRL');
+    }
 
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -75,28 +82,57 @@ export async function GET() {
         monthsOrder.push(key);
     }
 
-    // Aggregate in memory with O(1) map lookups
+    // Aggregate in memory with O(1) map lookups and currency conversion
     for (const tx of recentTx) {
         const txDate = new Date(tx.date);
         const key = `${txDate.getFullYear()}-${txDate.getMonth()}`;
         const monthObj = monthsMap.get(key);
+
+        const convertedAmount = toBase(tx.amount, (tx as any).currency || 'BRL');
+
         if (monthObj) {
-            if (tx.type === 'income') monthObj.receitas += tx.amount;
-            if (tx.type === 'expense') monthObj.despesas += tx.amount;
+            if (tx.type === 'income') monthObj.receitas += convertedAmount;
+            if (tx.type === 'expense') monthObj.despesas += convertedAmount;
+        }
+
+        // Also aggregate current month totals for the hero cards
+        if (key === currentMonth.replace('-0', '-').replace('-', '-')) {
+            // currentMonth is YYYY-MM, we need to handle format e.g. 2023-11 vs 2023-01
+        }
+        // Actually, simple check: is txDate >= startOfMonth
+        if (txDate.getTime() >= startOfMonth.getTime()) {
+            if (tx.type === 'income') income += convertedAmount;
+            if (tx.type === 'expense') expenses += convertedAmount;
         }
     }
 
+    const netWorth = income - expenses + investments;
+
     const months = monthsOrder.map(key => monthsMap.get(key)!);
 
-    // Get budgets
-    const budgets = await prisma.budget.findMany({
-        where: { userId, month: currentMonth },
-    });
+    // Filter budgets to just this month so Health Score is correct
+    const currentMonthBudgets = budgets.filter((b: any) => b.month === currentMonth);
+
+    // Calculate Financial Health Score (0-1000)
+    // 1. Savings Rate (600 pts)
+    const savingsRate = income > 0 ? (income - expenses) / income : 0;
+    const savingsScore = Math.max(0, Math.min(savingsRate * 600, 600));
+
+    // 2. Budget Adherence (400 pts)
+    let budgetScore = 400;
+    if (currentMonthBudgets.length > 0) {
+        const withinLimit = currentMonthBudgets.filter((b: any) => toBase(b.spent, b.currency || 'BRL') <= toBase(b.limit, b.currency || 'BRL')).length;
+        budgetScore = (withinLimit / currentMonthBudgets.length) * 400;
+    }
+
+    const healthScore = Math.round(savingsScore + budgetScore);
 
     return NextResponse.json({
         stats: { netWorth, income, expenses, investments },
         chartData: months,
         budgets,
+        healthScore,
         referral: userRecord,
+        preferredCurrency
     });
 }

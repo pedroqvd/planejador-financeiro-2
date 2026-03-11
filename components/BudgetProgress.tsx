@@ -12,11 +12,11 @@ type Budget = {
     month: string;
 };
 
-function formatCurrency(value: number) {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function formatCurrency(value: number, currency = 'BRL') {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency });
 }
 
-export function BudgetProgress({ budgets }: { budgets: Budget[] }) {
+export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets: Budget[], preferredCurrency?: string }) {
     if (!budgets || budgets.length === 0) {
         return (
             <motion.div
@@ -84,7 +84,7 @@ export function BudgetProgress({ budgets }: { budgets: Budget[] }) {
                                 <span className="text-sm font-medium text-zinc-700">{budget.category}</span>
                                 <div className="flex items-center space-x-2">
                                     <span className="text-[11px] text-zinc-400">
-                                        {formatCurrency(budget.spent)} / {formatCurrency(budget.limit)}
+                                        {formatCurrency(budget.spent, preferredCurrency)} / {formatCurrency(budget.limit, preferredCurrency)}
                                     </span>
                                     <span className={clsx(
                                         'text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5',

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { sendPushNotification } from '@/lib/firebase-admin';
 
 export async function GET() {
     const session = await auth();
@@ -10,6 +11,14 @@ export async function GET() {
 
     try {
         const userId = session.user.id;
+
+        // Fetch user to get FCM token
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { fcmToken: true }
+        });
+
+        const fcmToken = user?.fcmToken;
 
         // 1. Generate smart notifications dynamically if we haven't generated them today
         const startOfDay = new Date();
@@ -27,18 +36,29 @@ export async function GET() {
             const budgets = await prisma.budget.findMany({ where: { userId, month: currentMonth } });
             for (const b of budgets) {
                 const pct = b.limit > 0 ? (b.spent / b.limit) * 100 : 0;
+                let title = '';
+                let message = '';
+                let type = '';
+
                 if (pct >= 100) {
-                    await prisma.notification.create({
-                        data: {
-                            userId, title: 'Orçamento estourado', message: `Você ultrapassou o limite de ${b.category}.`, type: 'warning'
-                        }
-                    });
+                    title = 'Orçamento estourado';
+                    message = `Você ultrapassou o limite de ${b.category}.`;
+                    type = 'warning';
                 } else if (pct >= 80) {
+                    title = 'Orçamento no limite';
+                    message = `${b.category}: ${pct.toFixed(0)}% utilizado.`;
+                    type = 'info';
+                }
+
+                if (title) {
                     await prisma.notification.create({
-                        data: {
-                            userId, title: 'Orçamento no limite', message: `${b.category}: ${pct.toFixed(0)}% utilizado.`, type: 'info'
-                        }
+                        data: { userId, title, message, type }
                     });
+
+                    // Send Real Push if token exists
+                    if (fcmToken) {
+                        await sendPushNotification(fcmToken, title, message);
+                    }
                 }
             }
 
@@ -46,18 +66,29 @@ export async function GET() {
             const goals = await prisma.goal.findMany({ where: { userId } });
             for (const g of goals) {
                 const pct = g.target > 0 ? (g.current / g.target) * 100 : 0;
+                let title = '';
+                let message = '';
+                let type = '';
+
                 if (pct >= 100) {
-                    await prisma.notification.create({
-                        data: {
-                            userId, title: 'Meta atingida! 🎉', message: `Você completou a meta "${g.name}"!`, type: 'success'
-                        }
-                    });
+                    title = 'Meta atingida! 🎉';
+                    message = `Você completou a meta "${g.name}"!`;
+                    type = 'success';
                 } else if (pct >= 75) {
+                    title = 'Meta quase lá';
+                    message = `"${g.name}": ${pct.toFixed(0)}% concluída.`;
+                    type = 'info';
+                }
+
+                if (title) {
                     await prisma.notification.create({
-                        data: {
-                            userId, title: 'Meta quase lá', message: `"${g.name}": ${pct.toFixed(0)}% concluída.`, type: 'info'
-                        }
+                        data: { userId, title, message, type }
                     });
+
+                    // Send Real Push if token exists
+                    if (fcmToken) {
+                        await sendPushNotification(fcmToken, title, message);
+                    }
                 }
             }
         }
