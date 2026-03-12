@@ -14,10 +14,6 @@ import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { SmartBudgetModal } from '@/components/SmartBudgetModal';
 import {
   Plus,
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  PiggyBank,
   Upload,
   Sparkles,
   Bot,
@@ -27,7 +23,6 @@ import {
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx } from 'clsx';
-import { formatCurrency } from '@/lib/currency';
 
 type DashboardData = {
   stats: {
@@ -151,20 +146,35 @@ export default function Dashboard() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+            <motion.h1
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-2xl sm:text-3xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100"
+            >
               {getGreeting()}, {firstName}
-            </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5 uppercase tracking-wider"
+            >
               Resumo do seu planejamento financeiro
-            </p>
+            </motion.p>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+            className="flex items-center space-x-2"
+          >
             <button
               onClick={() => setShowSmartBudgetModal(true)}
-              className="group relative flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold uppercase tracking-wider hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20 overflow-hidden"
+              className="group relative flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold uppercase tracking-wider hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-lg shadow-indigo-500/20 overflow-hidden rounded-xl"
             >
               <motion.div
                 animate={{ x: ['-100%', '200%'] }}
@@ -176,26 +186,26 @@ export default function Dashboard() {
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-200 rounded-none"
+              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-wider hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all duration-200 rounded-xl"
             >
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Importar</span>
             </button>
             <button
               onClick={() => setShowScanModal(true)}
-              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 rounded-none"
+              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 border border-indigo-200 dark:border-indigo-800 text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all duration-200 rounded-xl"
             >
               <Scan className="w-4 h-4" />
-              <span className="hidden sm:inline">Escanear IA</span>
+              <span className="hidden sm:inline">Escanear</span>
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 dark:hover:bg-white transition-all duration-200 rounded-none shadow-xl"
+              className="flex items-center space-x-2 px-2.5 sm:px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 dark:hover:bg-white transition-all duration-200 rounded-xl shadow-xl shadow-zinc-900/10 dark:shadow-none"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nova Transação</span>
             </button>
-          </div>
+          </motion.div>
         </motion.div>
 
         <SyncStatus />
@@ -228,51 +238,6 @@ export default function Dashboard() {
               preferredCurrency={dashboard?.preferredCurrency}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Patrimônio Líquido */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.4 }}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md dark:hover:border-zinc-700 transition-all duration-300 group"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900 rounded-lg flex items-center justify-center group-hover:from-sky-50 group-hover:to-sky-100 dark:group-hover:from-sky-900/30 dark:group-hover:to-sky-800/30 transition-all duration-300">
-                    <Wallet className="w-[18px] h-[18px] text-zinc-500 dark:text-zinc-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400 dark:text-zinc-500">
-                      Patrimônio Líquido
-                    </p>
-                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
-                      {dashboard?.stats ? formatCurrency(dashboard.stats.netWorth, dashboard.preferredCurrency) : '—'}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Investimentos */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55, duration: 0.4 }}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 hover:shadow-md dark:hover:border-zinc-700 transition-all duration-300 group"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900 rounded-lg flex items-center justify-center group-hover:from-emerald-50 group-hover:to-emerald-100 dark:group-hover:from-emerald-900/30 dark:group-hover:to-emerald-800/30 transition-all duration-300">
-                    <PiggyBank className="w-[18px] h-[18px] text-zinc-500 dark:text-zinc-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider font-medium text-zinc-400 dark:text-zinc-500">
-                      Investimentos
-                    </p>
-                    <p className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mt-0.5">
-                      {dashboard?.stats ? formatCurrency(dashboard.stats.investments, dashboard.preferredCurrency) : '—'}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
           </div>
 
           {/* Sidebar Area (Budgets) */}
