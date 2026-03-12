@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getGeminiClient } from '@/lib/gemini';
+import { aiCoachRatelimit } from '@/lib/rate-limit';
 import { sendPushNotification } from '@/lib/firebase-admin';
 
 export async function GET() {
@@ -19,6 +20,14 @@ export async function GET() {
     if (userPlan === 'free') {
         return NextResponse.json({ error: 'Plano incompatível para o Coach.' }, { status: 403 });
     }
+
+    // Rate limit check: 3 per 10 mins
+    try {
+        const { success } = await aiCoachRatelimit.limit(`coach:${userId}`);
+        if (!success) {
+            return NextResponse.json({ error: 'Limite de insights atingido. Aguarde um instante.' }, { status: 429 });
+        }
+    } catch { /* dev fallback */ }
 
     try {
         const now = new Date();

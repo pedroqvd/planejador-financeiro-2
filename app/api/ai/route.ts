@@ -265,7 +265,9 @@ ${context}`;
 
         // Detect specific Gemini API rejections
         if (error.status === 429) {
-            return NextResponse.json({ error: 'Muitas consultas à IA. Aguarde um instante.' }, { status: 429 });
+            return NextResponse.json({ 
+                error: 'Limite de quota do Gemini Free atingido (15 consultas/min). Aguarde um instante ou verifique se há excesso de mensagens.' 
+            }, { status: 429 });
         }
         if (error.status === 403 || error.status === 400) {
             // Se for realmente bloqueio de segurança, o Gemini costuma retornar algo no erro.

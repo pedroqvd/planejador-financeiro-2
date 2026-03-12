@@ -22,9 +22,10 @@ function createRatelimit(maxRequests: number, windowSec: Duration, prefix: strin
     } as unknown as Ratelimit;
 }
 
-export const ratelimit = createRatelimit(10, '60 s', 'wealthcash:rl');
+export const ratelimit = createRatelimit(20, '60 s', 'wealthcash:rl');
 export const authRatelimit = createRatelimit(5, '900 s', 'wealthcash:auth-rl');
-export const aiRatelimit = createRatelimit(5, '60 s', 'wealthcash:ai-rl');
+export const aiRatelimit = createRatelimit(10, '60 s', 'wealthcash:ai-rl');
+export const aiCoachRatelimit = createRatelimit(3, '600 s', 'wealthcash:ai-coach-rl');
 
 export function getClientIp(request: Request): string {
     return (

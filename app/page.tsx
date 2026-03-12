@@ -56,13 +56,8 @@ export default function Dashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const [dashRes, aiRes] = await Promise.all([
-        fetch('/api/dashboard'),
-        fetch('/api/ai/coach')
-      ]);
-
+      const dashRes = await fetch('/api/dashboard');
       if (dashRes.ok) setDashboard(await dashRes.json());
-      if (aiRes.ok) setAiInsight(await aiRes.json());
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -70,8 +65,18 @@ export default function Dashboard() {
     }
   };
 
+  const fetchAiInsight = async () => {
+    try {
+      const aiRes = await fetch('/api/ai/coach');
+      if (aiRes.ok) setAiInsight(await aiRes.json());
+    } catch (error) {
+      console.error('Error fetching AI insight:', error);
+    }
+  };
+
   useEffect(() => {
     fetchDashboard();
+    fetchAiInsight();
 
     // Listen for sync completions to refresh data
     window.addEventListener('sync-complete', fetchDashboard);

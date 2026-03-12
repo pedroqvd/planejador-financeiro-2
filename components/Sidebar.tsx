@@ -43,19 +43,27 @@ function SidebarContent({ onClose, collapsed, onToggleCollapse }: { onClose?: ()
     <>
       {/* Header / Logo */}
       <div className={clsx("flex items-center justify-between", collapsed ? "p-3 pt-8 pb-6" : "p-6 pt-10 pb-8")}>
-        <Link href="/" className={clsx("flex items-center group cursor-pointer transition-all hover:opacity-80", collapsed ? "justify-center w-full" : "space-x-3")}>
-          <div className="sidebar-logo-icon p-2 rounded-xl transition-transform group-hover:scale-110 shadow-lg group-hover:shadow-indigo-500/20">
-            <Logo className="w-6 h-6 text-white dark:text-zinc-900 transition-transform group-hover:-rotate-12" />
+        <Link href="/" className={clsx("flex items-center group cursor-pointer transition-all hover:opacity-80 focus:outline-none", collapsed ? "justify-center w-full" : "space-x-4")}>
+          <div className={clsx(
+            "p-2.5 rounded-2xl transition-all duration-500 shadow-xl group-hover:shadow-indigo-500/40",
+            "bg-gradient-to-br from-indigo-600 to-violet-700"
+          )}>
+            <Logo className="w-6 h-6 text-white transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110" />
           </div>
           {!collapsed && (
-            <motion.span
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 whitespace-nowrap overflow-hidden"
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="flex flex-col"
             >
-              WealthCash
-            </motion.span>
+              <span className="text-xl font-editorial font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none">
+                WealthCash
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+                Premium
+              </span>
+            </motion.div>
           )}
         </Link>
         {onClose && (
@@ -120,17 +128,22 @@ function SidebarContent({ onClose, collapsed, onToggleCollapse }: { onClose?: ()
       <div className={clsx("border-t border-zinc-200 dark:border-zinc-800 space-y-2", collapsed ? "p-2" : "p-4")}>
         {/* Collapse toggle (desktop only) */}
         {onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            className={clsx(
-              'w-full flex items-center rounded-xl text-sm font-medium text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-400/10 transition-all duration-200',
-              collapsed ? 'justify-center px-3 py-3' : 'space-x-3 px-4 py-3'
-            )}
-            title={collapsed ? 'Expandir menu' : 'Minimizar menu'}
-          >
-            {collapsed ? <ChevronsRight className="w-[18px] h-[18px]" /> : <ChevronsLeft className="w-[18px] h-[18px]" />}
-            {!collapsed && <span>Minimizar</span>}
-          </button>
+          <div className={clsx("flex", collapsed ? "justify-center" : "justify-end mb-2")}>
+            <button
+              onClick={onToggleCollapse}
+              className={clsx(
+                'group p-2.5 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700',
+                !collapsed && 'mr-2'
+              )}
+              title={collapsed ? 'Expandir menu' : 'Minimizar menu'}
+            >
+              {collapsed ? (
+                <ChevronsRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
+              ) : (
+                <ChevronsLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+              )}
+            </button>
+          </div>
         )}
         <Link
           href="/settings"
