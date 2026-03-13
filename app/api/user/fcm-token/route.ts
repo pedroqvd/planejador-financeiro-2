@@ -15,6 +15,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'FCM Token inválido.' }, { status: 400 });
         }
 
+        // SECURITY: Validate FCM token format (Firebase tokens are long alphanumeric strings with hyphens/underscores)
+        if (token.length < 100 || token.length > 512 || !/^[A-Za-z0-9\-_:]+$/.test(token)) {
+            return NextResponse.json({ error: 'FCM Token inválido.' }, { status: 400 });
+        }
+
         // Salvar token no banco
         await prisma.user.update({
             where: { id: session.user.id },

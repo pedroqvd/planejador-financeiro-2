@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { authRatelimit } from '@/lib/rate-limit';
+import { logAudit } from '@/lib/audit';
 
 export async function PUT(request: Request) {
     const session = await auth();
@@ -58,6 +59,12 @@ export async function PUT(request: Request) {
         await prisma.user.update({
             where: { id: session.user.id },
             data: { password: hashedPassword },
+        });
+
+        await logAudit({
+            userId: session.user.id,
+            action: 'PASSWORD_CHANGED',
+            details: 'User changed their password',
         });
 
         return NextResponse.json({ message: 'Senha alterada com sucesso!' });

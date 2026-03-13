@@ -38,8 +38,23 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Arquivo muito grande (máx 5MB).' }, { status: 400 });
         }
 
+        // SECURITY: Validate MIME type against whitelist
+        const ALLOWED_MIME_TYPES: Record<string, string> = {
+            'application/pdf': 'application/pdf',
+            'text/csv': 'text/plain',
+            'text/plain': 'text/plain',
+            'application/vnd.ms-excel': 'text/plain',
+            'application/x-ofx': 'text/plain',
+        };
+        const ALLOWED_EXTENSIONS = ['.pdf', '.csv', '.txt', '.ofx', '.qfx'];
         const fileName = file.name.toLowerCase();
-        let mimeType = 'text/plain';
+        const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
+        const fileMime = file.type || '';
+        if (!hasValidExtension && !ALLOWED_MIME_TYPES[fileMime]) {
+            return NextResponse.json({ error: 'Formato não suportado. Use PDF, CSV, OFX ou TXT.' }, { status: 400 });
+        }
+
+        let mimeType = ALLOWED_MIME_TYPES[fileMime] || 'text/plain';
         if (fileName.endsWith('.pdf')) mimeType = 'application/pdf';
 
         const bytes = await file.arrayBuffer();
@@ -64,22 +79,29 @@ REGRAS:
 Se você não identificar o ano no documento, presuma o ano atual.
 Execute agora. Retorne o [ ... ] JSON.`;
 
-        const response = await getGeminiClient().models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: [
-                {
-                    role: 'user',
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { data: buffer.toString('base64'), mimeType } }
-                    ]
+        const importAbort = new AbortController();
+        const importTimeout = setTimeout(() => importAbort.abort(), 60_000); // 60s for large files
+        let response;
+        try {
+            response = await getGeminiClient().models.generateContent({
+                model: 'gemini-2.0-flash',
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            { text: prompt },
+                            { inlineData: { data: buffer.toString('base64'), mimeType } }
+                        ]
+                    }
+                ],
+                config: {
+                    temperature: 0.1,
+                    responseMimeType: "application/json"
                 }
-            ],
-            config: {
-                temperature: 0.1, // Highest precision logic
-                responseMimeType: "application/json"
-            }
-        });
+            });
+        } finally {
+            clearTimeout(importTimeout);
+        }
 
         const reply = response.text || '';
         const cleanJSON = reply.replace(/```json/g, '').replace(/```/g, '').trim();

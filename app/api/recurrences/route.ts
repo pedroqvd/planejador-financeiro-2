@@ -35,6 +35,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
+    const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
+    const VALID_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'];
+    const MAX_AMOUNT = 99_999_999;
+
     try {
         const body = await request.json();
         const { name, category, amount, type, frequency, nextDueDate, icon, color } = body;
@@ -43,17 +47,37 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Campos obrigatórios: name, amount, type, nextDueDate' }, { status: 400 });
         }
 
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0 || parsedAmount > MAX_AMOUNT) {
+            return NextResponse.json({ error: 'Valor deve ser entre R$ 0,01 e R$ 99.999.999.' }, { status: 400 });
+        }
+
+        if (type !== 'income' && type !== 'expense') {
+            return NextResponse.json({ error: 'Tipo deve ser "income" ou "expense".' }, { status: 400 });
+        }
+
+        if (frequency && !VALID_FREQUENCIES.includes(frequency)) {
+            return NextResponse.json({ error: 'Frequência inválida. Use: daily, weekly, monthly, yearly.' }, { status: 400 });
+        }
+
+        const parsedDate = new Date(nextDueDate);
+        if (isNaN(parsedDate.getTime())) {
+            return NextResponse.json({ error: 'Data inválida.' }, { status: 400 });
+        }
+
+        const validCategory = VALID_CATEGORIES.includes(category) ? category : 'Outros';
+
         const recurrence = await prisma.recurrence.create({
             data: {
                 userId: session.user.id,
-                name: name.slice(0, 100),
-                category: category || 'Outros',
-                amount: Math.abs(parseFloat(amount)),
-                type: type === 'income' ? 'income' : 'expense',
+                name: String(name).slice(0, 100),
+                category: validCategory,
+                amount: parsedAmount,
+                type,
                 frequency: frequency || 'monthly',
-                nextDueDate: new Date(nextDueDate),
-                icon: icon || 'RefreshCcw',
-                color: color || 'violet',
+                nextDueDate: parsedDate,
+                icon: icon ? String(icon).slice(0, 50) : 'RefreshCcw',
+                color: color ? String(color).slice(0, 30) : 'violet',
             },
         });
 
