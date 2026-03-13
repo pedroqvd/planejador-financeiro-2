@@ -31,8 +31,8 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Nova senha é obrigatória.' }, { status: 400 });
         }
 
-        if (newPassword.length < 6 || newPassword.length > 128) {
-            return NextResponse.json({ error: 'Nova senha deve ter entre 6 e 128 caracteres.' }, { status: 400 });
+        if (newPassword.length < 8 || newPassword.length > 128) {
+            return NextResponse.json({ error: 'Nova senha deve ter entre 8 e 128 caracteres.' }, { status: 400 });
         }
 
         if (currentPassword === newPassword) {

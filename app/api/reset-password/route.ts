@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { authRatelimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
+    // SECURITY: Rate limit password reset attempts
+    try {
+        const ip = getClientIp(request);
+        const { success } = await authRatelimit.limit(`reset:${ip}`);
+        if (!success) {
+            return NextResponse.json({ error: 'Muitas tentativas. Aguarde.' }, { status: 429 });
+        }
+    } catch { /* dev fallback */ }
+
     try {
         let body;
         try { body = await request.json(); }
@@ -15,8 +25,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Token inválido.' }, { status: 400 });
         }
 
-        if (password.length < 6 || password.length > 128) {
-            return NextResponse.json({ error: 'A senha deve ter entre 6 e 128 caracteres.' }, { status: 400 });
+        if (password.length < 8 || password.length > 128) {
+            return NextResponse.json({ error: 'A senha deve ter entre 8 e 128 caracteres.' }, { status: 400 });
         }
 
         // Find valid token

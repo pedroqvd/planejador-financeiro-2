@@ -23,9 +23,21 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Imagem não fornecida' }, { status: 400 });
         }
 
-        // Validate base64 image (basic check)
+        // Validate base64 image format
         if (!image.startsWith('data:image/')) {
             return NextResponse.json({ error: 'Formato de imagem inválido' }, { status: 400 });
+        }
+
+        // SECURITY: Validate image size to prevent DB bloat (max ~500KB base64 string)
+        const MAX_IMAGE_LENGTH = 700_000; // ~500KB decoded
+        if (image.length > MAX_IMAGE_LENGTH) {
+            return NextResponse.json({ error: 'Imagem muito grande. Máximo 500KB.' }, { status: 400 });
+        }
+
+        // Validate MIME type is an actual image format
+        const mimeMatch = image.match(/^data:image\/(jpeg|jpg|png|gif|webp);base64,/);
+        if (!mimeMatch) {
+            return NextResponse.json({ error: 'Formato de imagem não suportado. Use JPEG, PNG, GIF ou WebP.' }, { status: 400 });
         }
 
         await prisma.user.update({

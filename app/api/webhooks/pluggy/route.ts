@@ -27,9 +27,12 @@ export async function POST(req: Request) {
         const signature = req.headers.get('pluggy-signature');
         const bodyText = await req.text();
 
-        // Enforce signature verification when WEBHOOK_SECRET is configured
-        // This prevents spoofed webhooks in ALL environments (not just production)
-        if (WEBHOOK_SECRET && !verifySignature(bodyText, signature)) {
+        // SECURITY: Always require webhook secret. Reject if not configured or signature invalid.
+        if (!WEBHOOK_SECRET) {
+            console.error('[Pluggy Webhook] PLUGGY_WEBHOOK_SECRET not configured. Rejecting webhook.');
+            return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+        }
+        if (!verifySignature(bodyText, signature)) {
             console.warn('[Pluggy Webhook] Invalid signature detected.');
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }

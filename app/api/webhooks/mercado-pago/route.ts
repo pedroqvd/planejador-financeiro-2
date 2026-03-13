@@ -59,8 +59,12 @@ export async function POST(req: Request) {
         const dataId = url.searchParams.get('data.id') || '';
         const type = url.searchParams.get('type');
 
-        // Verify webhook authenticity if secret is configured
-        if (MP_WEBHOOK_SECRET && !verifyMPSignature(xSignature, xRequestId, dataId)) {
+        // SECURITY: Always require webhook secret. Reject if not configured or signature invalid.
+        if (!MP_WEBHOOK_SECRET) {
+            console.error('[MercadoPago Webhook] MERCADOPAGO_WEBHOOK_SECRET not configured. Rejecting webhook.');
+            return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+        }
+        if (!verifyMPSignature(xSignature, xRequestId, dataId)) {
             console.warn('[MercadoPago Webhook] Invalid signature detected.');
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }

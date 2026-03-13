@@ -8,8 +8,9 @@ export async function GET(request: Request) {
     try {
         const authHeader = request.headers.get('authorization');
 
-        // Use a secure token for cron jobs if deployed, otherwise skip for local testing
-        if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        // SECURITY: Always require CRON_SECRET. If not configured, deny access.
+        const cronSecret = process.env.CRON_SECRET;
+        if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 

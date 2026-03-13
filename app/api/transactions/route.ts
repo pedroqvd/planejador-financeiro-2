@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ratelimit, getClientIp } from '@/lib/rate-limit';
+import { ratelimit } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
 import { sanitize } from '@/lib/utils';
 import { sendPushNotification } from '@/lib/firebase-admin';
@@ -47,10 +47,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    // Rate limit
+    // SECURITY: Rate limit by user ID (not IP) for consistency
     try {
-        const ip = getClientIp(request);
-        const { success } = await ratelimit.limit(`post:${ip}`);
+        const { success } = await ratelimit.limit(`post:${session.user.id}`);
         if (!success) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
     } catch { /* dev fallback */ }
 
@@ -315,6 +314,11 @@ export async function DELETE(request: Request) {
 
         if (idsToDelete.length === 0) {
             return NextResponse.json({ error: 'ID ou IDs são obrigatórios.' }, { status: 400 });
+        }
+
+        // SECURITY: Limit bulk delete to prevent expensive DB operations
+        if (idsToDelete.length > 100) {
+            return NextResponse.json({ error: 'Máximo de 100 transações por requisição.' }, { status: 400 });
         }
 
         // Verify ownership and get data for all requested transactions

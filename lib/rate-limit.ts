@@ -16,6 +16,15 @@ function createRatelimit(maxRequests: number, windowSec: Duration, prefix: strin
         });
     }
 
+    // SECURITY: In production, if Redis is not configured, deny requests (fail-closed).
+    // In development, allow all requests to avoid blocking local work.
+    if (process.env.NODE_ENV === 'production') {
+        console.warn(`[Rate Limit] Upstash Redis not configured for prefix "${prefix}". Requests will be denied in production.`);
+        return {
+            limit: async () => ({ success: false, limit: 0, remaining: 0, reset: 0, pending: Promise.resolve() }),
+        } as unknown as Ratelimit;
+    }
+
     // Dev: no-op rate limiter (always allows)
     return {
         limit: async () => ({ success: true, limit: maxRequests, remaining: maxRequests, reset: 0, pending: Promise.resolve() }),
