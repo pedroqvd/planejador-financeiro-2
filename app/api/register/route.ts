@@ -59,9 +59,9 @@ export async function POST(request: Request) {
             );
         }
 
-        if (password.length < 6 || password.length > 128) {
+        if (password.length < 8 || password.length > 128) {
             return NextResponse.json(
-                { error: 'A senha deve ter entre 6 e 128 caracteres.' },
+                { error: 'A senha deve ter entre 8 e 128 caracteres.' },
                 { status: 400 }
             );
         }

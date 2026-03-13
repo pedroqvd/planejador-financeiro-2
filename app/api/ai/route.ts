@@ -270,13 +270,12 @@ ${context}`;
             }, { status: 429 });
         }
         if (error.status === 403 || error.status === 400) {
-            // Se for realmente bloqueio de segurança, o Gemini costuma retornar algo no erro.
-            // Aqui removemos o texto enganoso de "Prompt Injection" se não tivermos certeza.
+            // SECURITY: Never leak internal error.message to client
             const isSafety = error.message?.toLowerCase().includes('safety') || error.message?.toLowerCase().includes('candidate');
-            return NextResponse.json({ 
-                error: isSafety 
-                    ? 'Conteúdo bloqueado pelos filtros de segurança da IA.' 
-                    : `Erro na consulta à IA: ${error.message || 'Verifique sua conexão ou crédito.'}` 
+            return NextResponse.json({
+                error: isSafety
+                    ? 'Conteúdo bloqueado pelos filtros de segurança da IA.'
+                    : 'Erro na consulta à IA. Verifique sua conexão ou tente novamente.'
             }, { status: error.status });
         }
 

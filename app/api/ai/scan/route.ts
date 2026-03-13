@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getGeminiClient } from '@/lib/gemini';
+import { ratelimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
     const session = await auth();
@@ -13,10 +14,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'OCR de recibos disponível apenas para planos Pro/Premium.' }, { status: 403 });
     }
 
+    // SECURITY: Rate limiting per user
+    try {
+        const { success } = await ratelimit.limit(`scan:${session.user.id}`);
+        if (!success) return NextResponse.json({ error: 'Muitas requisições. Aguarde um momento.' }, { status: 429 });
+    } catch { /* dev fallback */ }
+
     try {
         const { image } = await request.json(); // base64 image data
         if (!image) {
             return NextResponse.json({ error: 'Imagem é obrigatória.' }, { status: 400 });
+        }
+
+        // SECURITY: Validate image size (max ~5MB base64 string)
+        if (typeof image !== 'string' || image.length > 7_000_000) {
+            return NextResponse.json({ error: 'Imagem muito grande. Máximo 5MB.' }, { status: 400 });
         }
 
         // Clean base64 string
@@ -72,9 +84,10 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('Scan API error:', error);
         
+        // SECURITY: Never leak internal error.message to client
         if (error.status === 400 || error.status === 403) {
-            return NextResponse.json({ 
-                error: `Erro de configuração na IA: ${error.message || 'Verifique os parâmetros.'}` 
+            return NextResponse.json({
+                error: 'Erro ao processar imagem. Verifique o formato e tente novamente.'
             }, { status: error.status });
         }
 
