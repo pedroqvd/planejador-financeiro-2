@@ -2,10 +2,10 @@ import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 const publicRoutes = [
-    '/login', 
-    '/register', 
-    '/landing', 
-    '/forgot-password', 
+    '/login',
+    '/register',
+    '/landing',
+    '/forgot-password',
     '/reset-password',
     '/termos',
     '/privacidade',
@@ -18,9 +18,20 @@ export default auth((req) => {
     const { pathname } = req.nextUrl;
     const isPublicPage = publicRoutes.some(r => pathname.startsWith(r));
     const isApiRoute = pathname.startsWith('/api');
+    const isMfaPage = pathname === '/login/mfa';
 
-    // Allow API routes to pass through
+    // Allow API routes to pass through (they check auth internally)
     if (isApiRoute) return NextResponse.next();
+
+    // Allow the MFA verification page for logged-in users pending MFA
+    if (isMfaPage && isLoggedIn) {
+        const mfaVerified = (req.auth?.user as any)?.mfaVerified;
+        // If already verified, redirect to dashboard
+        if (mfaVerified !== false) {
+            return NextResponse.redirect(new URL('/', req.nextUrl));
+        }
+        return NextResponse.next();
+    }
 
     // Redirect logged-in users away from public pages to dashboard
     if (isPublicPage && isLoggedIn) {
@@ -30,6 +41,14 @@ export default auth((req) => {
     // Redirect non-logged-in users to landing page
     if (!isPublicPage && !isLoggedIn) {
         return NextResponse.redirect(new URL('/landing', req.nextUrl));
+    }
+
+    // Enforce MFA: if user has MFA enabled but not yet verified, redirect to MFA page
+    if (isLoggedIn && !isPublicPage) {
+        const mfaVerified = (req.auth?.user as any)?.mfaVerified;
+        if (mfaVerified === false) {
+            return NextResponse.redirect(new URL('/login/mfa', req.nextUrl));
+        }
     }
 
     return NextResponse.next();

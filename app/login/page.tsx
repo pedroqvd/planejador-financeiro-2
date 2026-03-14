@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
@@ -30,7 +30,13 @@ export default function LoginPage() {
             if (result?.error) {
                 setError('Email ou senha incorretos.');
             } else {
-                router.push('/');
+                // Check if user needs MFA verification
+                const session = await getSession();
+                if (session?.user && (session.user as any).mfaVerified === false) {
+                    router.push('/login/mfa');
+                } else {
+                    router.push('/');
+                }
                 router.refresh();
             }
         } catch {

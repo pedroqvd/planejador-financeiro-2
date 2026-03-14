@@ -37,6 +37,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null;
                 }
 
+                // Clear mfaVerifiedAt on every new login so MFA is required again
+                if (user.mfaEnabled) {
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { mfaVerifiedAt: null },
+                    });
+                }
+
                 await logAudit({
                     userId: user.id,
                     action: 'LOGIN_SUCCESS',
@@ -50,6 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     plan: user.plan,
                     preferredCurrency: (user as any).preferredCurrency || 'BRL',
                     mfaEnabled: (user as any).mfaEnabled || false,
+                    mfaVerified: !user.mfaEnabled, // true if no MFA, false if MFA enabled
                 };
             },
         }),
@@ -67,18 +76,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.plan = (user as any).plan || 'free';
                 token.preferredCurrency = (user as any).preferredCurrency || 'BRL';
                 token.mfaEnabled = (user as any).mfaEnabled || false;
+                token.mfaVerified = (user as any).mfaVerified ?? true;
             }
-            // Refresh plan and currency from DB on session update
+            // Refresh from DB on session update (triggered after MFA verification or settings change)
             if (trigger === 'update' && token.id) {
                 const dbUser = await prisma.user.findUnique({
                     where: { id: token.id as string },
                     // @ts-ignore
-                    select: { plan: true, preferredCurrency: true, mfaEnabled: true },
+                    select: { plan: true, preferredCurrency: true, mfaEnabled: true, mfaVerifiedAt: true },
                 });
                 if (dbUser) {
                     token.plan = dbUser.plan;
                     token.preferredCurrency = (dbUser as any).preferredCurrency || 'BRL';
                     token.mfaEnabled = (dbUser as any).mfaEnabled || false;
+                    // If MFA is enabled and was recently verified, mark as verified
+                    if ((dbUser as any).mfaEnabled && (dbUser as any).mfaVerifiedAt) {
+                        token.mfaVerified = true;
+                    } else if (!(dbUser as any).mfaEnabled) {
+                        token.mfaVerified = true;
+                    }
                 }
             }
             return token;
@@ -89,6 +105,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 (session.user as any).plan = token.plan as string;
                 (session.user as any).preferredCurrency = token.preferredCurrency as string;
                 (session.user as any).mfaEnabled = token.mfaEnabled as boolean;
+                (session.user as any).mfaVerified = token.mfaVerified as boolean;
             }
             return session;
         },

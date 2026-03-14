@@ -27,6 +27,7 @@ model User {
   updatedAt            DateTime      @updatedAt
   mfaEnabled           Boolean       @default(false)
   mfaSecret            String?       // Encrypted TOTP secret
+  mfaVerifiedAt        DateTime?     // Set after successful MFA verification, cleared on login
   transactions         Transaction[]
   budgets              Budget[]
   goals                Goal[]
