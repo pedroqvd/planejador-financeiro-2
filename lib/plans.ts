@@ -6,9 +6,9 @@ export const PLANS = {
             transactionsPerMonth: 100,
             goalsCount: 2,
             budgetsCount: 1,
-            aiRequestsPerMonth: 0,
+            aiRequestsPerMonth: 5,
         },
-        features: ['100 transações/mês', '2 metas', '1 orçamento'],
+        features: ['100 transações/mês', '2 metas', '1 orçamento', '5 consultas IA/dia'],
     },
     pro: {
         name: 'Pro',

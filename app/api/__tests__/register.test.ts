@@ -53,14 +53,14 @@ describe('POST /api/register', () => {
     });
 
     it('should return 400 if name is missing', async () => {
-        const res = await POST(makeRequest({ email: 'test@test.com', password: '123456' }));
+        const res = await POST(makeRequest({ email: 'test@test.com', password: '12345678' }));
         expect(res.status).toBe(400);
         const data = await res.json();
         expect(data.error).toContain('obrigatórios');
     });
 
     it('should return 400 if email is missing', async () => {
-        const res = await POST(makeRequest({ name: 'Test', password: '123456' }));
+        const res = await POST(makeRequest({ name: 'Test', password: '12345678' }));
         expect(res.status).toBe(400);
     });
 
@@ -70,21 +70,21 @@ describe('POST /api/register', () => {
     });
 
     it('should return 400 for invalid email format', async () => {
-        const res = await POST(makeRequest({ name: 'Test', email: 'notanemail', password: '123456' }));
+        const res = await POST(makeRequest({ name: 'Test', email: 'notanemail', password: '12345678' }));
         expect(res.status).toBe(400);
         const data = await res.json();
         expect(data.error).toContain('email');
     });
 
-    it('should return 400 for password shorter than 6 chars', async () => {
-        const res = await POST(makeRequest({ name: 'Test', email: 'test@test.com', password: '12345' }));
+    it('should return 400 for password shorter than 8 chars', async () => {
+        const res = await POST(makeRequest({ name: 'Test', email: 'test@test.com', password: '1234567' }));
         expect(res.status).toBe(400);
         const data = await res.json();
-        expect(data.error).toContain('6');
+        expect(data.error).toContain('8');
     });
 
     it('should return 400 for name shorter than 2 chars', async () => {
-        const res = await POST(makeRequest({ name: 'T', email: 'test@test.com', password: '123456' }));
+        const res = await POST(makeRequest({ name: 'T', email: 'test@test.com', password: '12345678' }));
         expect(res.status).toBe(400);
         const data = await res.json();
         expect(data.error).toContain('2');
@@ -93,7 +93,7 @@ describe('POST /api/register', () => {
     it('should return 409 if user already exists', async () => {
         (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'existing' });
 
-        const res = await POST(makeRequest({ name: 'Test', email: 'existing@test.com', password: '123456' }));
+        const res = await POST(makeRequest({ name: 'Test', email: 'existing@test.com', password: '12345678' }));
         expect(res.status).toBe(409);
         const data = await res.json();
         expect(data.error).toContain('cadastrado');
@@ -104,7 +104,7 @@ describe('POST /api/register', () => {
         (prisma.user.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'new-user-id', name: 'Test', email: 'new@test.com' });
         (prisma.budget.createMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ count: 5 });
 
-        const res = await POST(makeRequest({ name: 'Test User', email: 'new@test.com', password: '123456' }));
+        const res = await POST(makeRequest({ name: 'Test User', email: 'new@test.com', password: '12345678' }));
         expect(res.status).toBe(201);
         const data = await res.json();
         expect(data.message).toContain('sucesso');
@@ -115,7 +115,7 @@ describe('POST /api/register', () => {
         (prisma.user.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'test' });
         (prisma.budget.createMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ count: 5 });
 
-        await POST(makeRequest({ name: '<script>alert("xss")</script>', email: 'xss@test.com', password: '123456' }));
+        await POST(makeRequest({ name: 'Test<script>alert("xss")</script>User', email: 'xss@test.com', password: '12345678' }));
 
         // The create call should have sanitized the name
         const createCall = (prisma.user.create as ReturnType<typeof vi.fn>).mock.calls[0][0];

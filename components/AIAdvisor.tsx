@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Sparkles, Send, Loader2, Bot, User, Mic, Square, X, MessageSquare } from 'lucide-react';
+import { Send, Loader2, Bot, User, Mic, Square, X, MessageSquare, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
 
@@ -16,6 +16,13 @@ export type AIAdvisorHandle = {
   openChat: () => void;
 };
 
+const QUICK_CHIPS = [
+  'Como estão minhas finanças?',
+  'Onde posso economizar?',
+  'Resuma meus gastos da semana',
+  'Sugestão de investimento',
+];
+
 export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }>(
   function AIAdvisor({ initialMessage }, ref) {
     const [isOpen, setIsOpen] = useState(false);
@@ -23,11 +30,12 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
       {
         id: 'welcome',
         role: 'assistant',
-        content: 'Olá! Sou o **Cash**, seu consultor financeiro IA. Posso registrar seus gastos se você falar o valor e a categoria, ou apenas analisar suas finanças. Pergunte algo ou me envie um áudio!',
+        content: 'Olá! Sou o **Cash**, seu consultor financeiro IA.\n\nPosso analisar suas finanças, registrar gastos por texto ou voz, e dar conselhos personalizados. Como posso ajudar?',
       },
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showChips, setShowChips] = useState(true);
 
     // Audio recording state
     const [isRecording, setIsRecording] = useState(false);
@@ -57,6 +65,8 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
       const msg = (text || input).trim();
       if ((!msg && !audioBlob) || loading) return;
 
+      setShowChips(false);
+
       const userMessage: Message = {
         id: Date.now().toString(),
         role: 'user',
@@ -71,6 +81,13 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
         const formData = new FormData();
         if (msg) formData.append('message', msg);
         if (audioBlob) formData.append('audio', audioBlob, 'record.webm');
+
+        // Send conversation history for context (last 6 messages)
+        const history = messages
+          .filter(m => m.id !== 'welcome')
+          .slice(-6)
+          .map(m => ({ role: m.role, content: m.content }));
+        formData.append('history', JSON.stringify(history));
 
         const res = await fetch('/api/ai', {
           method: 'POST',
@@ -120,7 +137,7 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
         setIsRecording(true);
       } catch (err) {
         console.error('Error accessing microphone', err);
-        toast.error('Permissão de microfone bloqueada pelo navegador. Libere o acesso na barra de endereço.');
+        toast.error('Permissão de microfone bloqueada pelo navegador.');
       }
     };
 
@@ -154,6 +171,17 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
       return `${m}:${s.toString().padStart(2, '0')}`;
     };
 
+    const renderMessage = (content: string) => {
+      return content.split('\n').map((line, i) => (
+        <span key={i}>
+          {line.split('**').map((part, j) =>
+            j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+          )}
+          {i < content.split('\n').length - 1 && <br />}
+        </span>
+      ));
+    };
+
     return (
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end">
         <AnimatePresence>
@@ -163,22 +191,31 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="bg-white border border-zinc-200 shadow-2xl flex flex-col w-[340px] sm:w-[380px] h-[580px] mb-4 origin-bottom-right"
+              className="flex flex-col w-[360px] sm:w-[400px] h-[600px] mb-4 origin-bottom-right"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}
             >
               {/* Header */}
-              <div className="bg-zinc-900 px-5 py-4 flex items-center justify-between">
+              <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 border border-zinc-700 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-zinc-400" />
+                  <div
+                    className="w-9 h-9 flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
+                  >
+                    <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-white font-editorial font-bold text-sm">Cash — IA Advisor</h3>
-                    <p className="text-zinc-500 text-[10px] uppercase tracking-wider">Consultor financeiro</p>
+                    <h3 className="font-editorial font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                      Cash — IA Advisor
+                    </h3>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+                      Consultor financeiro pessoal
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="text-zinc-400 hover:text-white transition-colors p-1"
+                  className="p-1 transition-opacity opacity-40 hover:opacity-100"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -193,39 +230,68 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2 }}
-                      className={`flex items-start space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}
+                      className={`flex items-start space-x-2.5 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}
                     >
-                      <div className={`w-7 h-7 flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant'
-                        ? 'border border-zinc-200 text-zinc-500 rounded-full'
-                        : 'bg-zinc-900 text-white rounded-full'
-                        }`}>
+                      <div
+                        className="w-7 h-7 flex items-center justify-center flex-shrink-0"
+                        style={msg.role === 'assistant'
+                          ? { border: '1px solid var(--border-color)', color: 'var(--accent-ink)' }
+                          : { backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }
+                        }
+                      >
                         {msg.role === 'assistant' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                       </div>
-                      <div className={`max-w-[80%] px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'assistant'
-                        ? 'bg-zinc-50 text-zinc-800 border border-zinc-100 rounded-lg rounded-tl-none'
-                        : 'bg-zinc-900 text-white rounded-lg rounded-tr-none'
-                        }`}>
-                        {msg.content.split('\n').map((line, i) => (
-                          <span key={i}>
-                            {line.split('**').map((part, j) =>
-                              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
-                            )}
-                            {i < msg.content.split('\n').length - 1 && <br />}
-                          </span>
-                        ))}
+                      <div
+                        className="max-w-[80%] px-3.5 py-2.5 text-sm leading-relaxed"
+                        style={msg.role === 'assistant'
+                          ? { backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }
+                          : { backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }
+                        }
+                      >
+                        {renderMessage(msg.content)}
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
+                {/* Typing indicator */}
                 {loading && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center space-x-2">
-                    <div className="w-7 h-7 border border-zinc-200 text-zinc-500 flex items-center justify-center rounded-full">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start space-x-2.5">
+                    <div
+                      className="w-7 h-7 flex items-center justify-center flex-shrink-0"
+                      style={{ border: '1px solid var(--border-color)', color: 'var(--accent-ink)' }}
+                    >
                       <Bot className="w-3.5 h-3.5" />
                     </div>
-                    <div className="bg-zinc-50 border border-zinc-100 px-4 py-3 rounded-lg rounded-tl-none">
-                      <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+                    <div
+                      className="px-4 py-3 flex items-center space-x-1.5"
+                      style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)' }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'var(--accent-ink)', animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'var(--accent-ink)', animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: 'var(--accent-ink)', animationDelay: '300ms' }} />
                     </div>
+                  </motion.div>
+                )}
+
+                {/* Quick Chips */}
+                {showChips && !loading && messages.length <= 1 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-wrap gap-2 pt-2"
+                  >
+                    {QUICK_CHIPS.map((chip) => (
+                      <button
+                        key={chip}
+                        onClick={() => sendMessage(chip)}
+                        className="text-[11px] font-medium px-3 py-1.5 transition-all hover:opacity-70"
+                        style={{ border: '1px solid var(--border-color)', color: 'var(--accent-ink)', backgroundColor: 'transparent' }}
+                      >
+                        {chip}
+                      </button>
+                    ))}
                   </motion.div>
                 )}
 
@@ -233,18 +299,21 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
               </div>
 
               {/* Input */}
-              <div className="p-3 border-t border-zinc-200 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <div className="p-3" style={{ borderTop: '1px solid var(--border-color)' }}>
                 <form
                   onSubmit={(e) => { e.preventDefault(); sendMessage(); }}
                   className="flex items-center space-x-2"
                 >
                   {isRecording ? (
-                    <div className="flex-1 flex items-center justify-between px-4 py-2.5 bg-red-50 text-red-600 text-sm font-medium animate-pulse border border-red-200 rounded-full">
+                    <div
+                      className="flex-1 flex items-center justify-between px-4 py-2.5 text-sm font-medium animate-pulse"
+                      style={{ backgroundColor: '#f43f5e15', color: '#f43f5e', border: '1px solid #f43f5e30' }}
+                    >
                       <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-red-600" />
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f43f5e' }} />
                         <span>Gravando...</span>
                       </div>
-                      <span>{formatTime(recordingTime)}</span>
+                      <span className="font-mono text-xs">{formatTime(recordingTime)}</span>
                     </div>
                   ) : (
                     <input
@@ -252,7 +321,8 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       placeholder="Gastei 50 no Ifood..."
-                      className="flex-1 px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-full text-sm focus:outline-none focus:border-zinc-500 transition-all"
+                      className="flex-1 px-4 py-2.5 text-sm focus:outline-none transition-all"
+                      style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
                       maxLength={500}
                       disabled={loading}
                     />
@@ -263,7 +333,8 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
                       type="button"
                       onClick={startRecording}
                       disabled={loading}
-                      className="p-3 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition-all rounded-full disabled:opacity-40"
+                      className="p-2.5 transition-all disabled:opacity-40"
+                      style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
                     >
                       <Mic className="w-4 h-4" />
                     </button>
@@ -271,7 +342,8 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
                     <button
                       type="button"
                       onClick={stopRecording}
-                      className="p-3 bg-red-600 text-white hover:bg-red-700 transition-all rounded-full"
+                      className="p-2.5 transition-all"
+                      style={{ backgroundColor: '#f43f5e', color: 'white' }}
                     >
                       <Square className="w-4 h-4" />
                     </button>
@@ -279,7 +351,8 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
                     <button
                       type="submit"
                       disabled={loading || !input.trim()}
-                      className="p-3 bg-zinc-900 text-white hover:bg-zinc-800 transition-all rounded-full disabled:opacity-40"
+                      className="p-2.5 transition-all disabled:opacity-40"
+                      style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
                     >
                       <Send className="w-4 h-4" />
                     </button>
@@ -290,16 +363,18 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
           )}
         </AnimatePresence>
 
+        {/* Floating Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-14 h-14 bg-zinc-900 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all border border-zinc-800 relative group"
+          className="w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all relative"
+          style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
         >
           {isOpen ? <X className="w-6 h-6" /> : (
             <>
               <MessageSquare className="w-6 h-6" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white"></div>
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981', border: '2px solid var(--bg-card)' }} />
             </>
           )}
         </motion.button>

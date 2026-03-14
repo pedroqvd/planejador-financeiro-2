@@ -32,12 +32,26 @@ export async function POST(request: Request) {
         const contentType = request.headers.get('content-type') || '';
         let message = '';
         let audioParts: any[] = [];
+        let conversationHistory: { role: string; content: string }[] = [];
 
         try {
             if (contentType.includes('multipart/form-data')) {
                 const formData = await request.formData() as any;
                 message = (formData.get('message') as string) || '';
                 const audioFile = formData.get('audio');
+                const historyRaw = formData.get('history') as string;
+
+                if (historyRaw) {
+                    try {
+                        const parsed = JSON.parse(historyRaw);
+                        if (Array.isArray(parsed)) {
+                            conversationHistory = parsed.slice(-6).map((m: any) => ({
+                                role: String(m.role || 'user'),
+                                content: sanitize(String(m.content || ''), 500),
+                            }));
+                        }
+                    } catch { /* ignore malformed history */ }
+                }
 
                 if (audioFile && typeof audioFile.arrayBuffer === 'function') {
                     const buffer = Buffer.from(await audioFile.arrayBuffer());
@@ -189,18 +203,32 @@ Categorias permitidas: Alimentação, Transporte, Moradia, Lazer, Salário, Outr
 
 ${context}`;
 
-        const parts: any[] = [{ text: systemPrompt + '\n\nPergunta do usuário: ' + sanitizedMessage }];
-        if (audioParts.length > 0) {
-            parts.push(...audioParts);
+        // Build multi-turn contents for conversation context
+        const contents: any[] = [];
+
+        // System context as first user message
+        contents.push({ role: 'user', parts: [{ text: systemPrompt }] });
+        contents.push({ role: 'model', parts: [{ text: 'Entendido! Estou pronto para ajudar com suas finanças. Como posso te ajudar?' }] });
+
+        // Add conversation history for context continuity
+        for (const msg of conversationHistory) {
+            const role = msg.role === 'assistant' ? 'model' : 'user';
+            contents.push({ role, parts: [{ text: msg.content }] });
         }
 
-        const geminiAbort = new AbortController();
-        const geminiTimeout = setTimeout(() => geminiAbort.abort(), 30_000);
+        // Current message
+        const currentParts: any[] = [{ text: sanitizedMessage }];
+        if (audioParts.length > 0) {
+            currentParts.push(...audioParts);
+        }
+        contents.push({ role: 'user', parts: currentParts });
+
+        const geminiTimeout = setTimeout(() => {}, 30_000);
         let response;
         try {
             response = await getGeminiClient().models.generateContent({
                 model: 'models/gemini-2.0-flash',
-                contents: [{ role: 'user', parts }],
+                contents,
                 config: {
                     maxOutputTokens: 1000,
                     temperature: 0.7,
