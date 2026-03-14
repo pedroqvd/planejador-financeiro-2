@@ -15,10 +15,11 @@ export async function POST(req: Request) {
 
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { mfaSecret: true, mfaEnabled: true }
+            select: { mfaSecret: true, mfaEnabled: true, mfaPendingSecret: true }
         });
 
-        const actualSecret = setup ? secret : user?.mfaSecret;
+        // For setup: use server-stored pending secret (never trust client-provided secret)
+        const actualSecret = setup ? user?.mfaPendingSecret : user?.mfaSecret;
 
         if (!actualSecret) {
             return NextResponse.json({ error: 'Configuração de MFA não encontrada.' }, { status: 400 });
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
                     mfaSecret: actualSecret,
                     mfaEnabled: true,
                     mfaVerifiedAt: new Date(),
+                    mfaPendingSecret: null, // Clear pending secret after successful setup
                 }
             });
 

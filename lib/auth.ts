@@ -77,7 +77,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.preferredCurrency = (user as any).preferredCurrency || 'BRL';
                 token.mfaEnabled = (user as any).mfaEnabled || false;
                 token.mfaVerified = (user as any).mfaVerified ?? true;
+                token.issuedAt = Date.now();
             }
+
+            // Invalidate session if password was changed after token was issued
+            if (token.id && token.issuedAt) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    // @ts-ignore
+                    select: { passwordChangedAt: true },
+                });
+                if (dbUser?.passwordChangedAt && new Date(dbUser.passwordChangedAt).getTime() > (token.issuedAt as number)) {
+                    // Return empty token to force sign-out
+                    return { ...token, invalidated: true };
+                }
+            }
+
             // Refresh from DB on session update (triggered after MFA verification or settings change)
             if (trigger === 'update' && token.id) {
                 const dbUser = await prisma.user.findUnique({
@@ -89,7 +104,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     token.plan = dbUser.plan;
                     token.preferredCurrency = (dbUser as any).preferredCurrency || 'BRL';
                     token.mfaEnabled = (dbUser as any).mfaEnabled || false;
-                    // If MFA is enabled and was recently verified, mark as verified
                     if ((dbUser as any).mfaEnabled && (dbUser as any).mfaVerifiedAt) {
                         token.mfaVerified = true;
                     } else if (!(dbUser as any).mfaEnabled) {
@@ -100,6 +114,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return token;
         },
         async session({ session, token }) {
+            // If token was invalidated (password changed), clear the session
+            if (token.invalidated) {
+                session.user = undefined as any;
+                return session;
+            }
             if (session.user) {
                 session.user.id = token.id as string;
                 (session.user as any).plan = token.plan as string;

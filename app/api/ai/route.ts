@@ -5,6 +5,7 @@ import { aiRatelimit } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
 import { getGeminiClient } from '@/lib/gemini';
 import { sanitize } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 const VALID_TYPES = ['income', 'expense'] as const;
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
@@ -256,15 +257,13 @@ ${context}`;
                 }
             }
         } catch (err) {
-            console.error('Failed to parse AI action JSON', err);
+            logger.error('[AI] Failed to parse action JSON', err);
             // Ignore parse errors, just return the raw text to the user
         }
 
         return NextResponse.json({ reply });
     } catch (error: any) {
-        console.error('AI error message:', error.message);
-        console.error('AI error status:', error.status);
-        console.error('AI error details:', error.details || error);
+        logger.error(`[AI] Request failed (status: ${error.status})`, error);
 
         // Em caso de erro na IA, temos que devolver a cota descontada atomicamente acima
         try {

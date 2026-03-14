@@ -25,8 +25,10 @@ model User {
   preferredCurrency    String        @default("BRL") // Base currency for dashboard
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+  passwordChangedAt    DateTime?     // Used to invalidate sessions after password change
   mfaEnabled           Boolean       @default(false)
   mfaSecret            String?       // Encrypted TOTP secret
+  mfaPendingSecret     String?       // Temporary secret during MFA setup (cleared after verification)
   mfaVerifiedAt        DateTime?     // Set after successful MFA verification, cleared on login
   transactions         Transaction[]
   budgets              Budget[]
@@ -180,4 +182,13 @@ model Recurrence {
 
   @@index([userId])
   @@index([userId, active])
+}
+
+model WebhookEvent {
+  id        String   @id
+  source    String   // "mercadopago" | "pluggy"
+  createdAt DateTime @default(now())
+
+  @@index([source])
+  @@index([createdAt])
 }

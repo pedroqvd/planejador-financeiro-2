@@ -128,7 +128,6 @@ export default function SettingsPage() {
             if (res.ok) {
                 const data = await res.json();
                 setMfaQrCode(data.qrCode);
-                setMfaSecret(data.secret);
             } else { setMfaError('Erro ao iniciar configuração de MFA.'); }
         } catch { setMfaError('Erro de conexão.'); }
         finally { setMfaSetupLoading(false); }
@@ -141,7 +140,7 @@ export default function SettingsPage() {
             const res = await fetch('/api/auth/mfa/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: mfaToken, secret: mfaSecret, setup: true }),
+                body: JSON.stringify({ token: mfaToken, setup: true }),
             });
             if (res.ok) {
                 setMfaStatus(true);
@@ -670,7 +669,7 @@ export default function SettingsPage() {
                                 <div className="space-y-4 flex-1">
                                     <h3 className="text-sm font-bold text-zinc-900">1. Escaneie o QR Code</h3>
                                     <p className="text-xs text-zinc-500 leading-relaxed">
-                                        Use seu aplicativo de autenticação preferido para escanear o código ao lado. Se não conseguir, use a chave: <code className="bg-zinc-100 px-1 py-0.5 rounded text-zinc-900 font-mono text-[10px]">{mfaSecret}</code>
+                                        Use seu aplicativo de autenticação preferido para escanear o código QR ao lado.
                                     </p>
                                     <div className="h-px bg-zinc-100" />
                                     <h3 className="text-sm font-bold text-zinc-900">2. Confirme o código</h3>

@@ -72,7 +72,13 @@ export async function POST(req: Request) {
         const body = await req.json();
         const eventType = type || body.type;
 
-        console.log(`[MercadoPago Webhook] Received action: ${action}, type: ${eventType}`);
+        // Idempotency: skip already-processed events
+        const eventId = `mp:${dataId}:${action || eventType}`;
+        const existing = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
+        if (existing) {
+            return NextResponse.json({ received: true, duplicate: true });
+        }
+        await prisma.webhookEvent.create({ data: { id: eventId, source: 'mercadopago' } });
 
         const client = new MercadoPagoConfig({ accessToken, options: { timeout: 5000 } });
 
