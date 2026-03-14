@@ -1,6 +1,5 @@
 'use client';
 
-import { clsx } from 'clsx';
 import { motion } from 'motion/react';
 import { AlertTriangle } from 'lucide-react';
 
@@ -23,21 +22,24 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.4 }}
-                className="bg-white border border-zinc-200 p-6 h-full"
+                className="card-editorial p-6 h-full"
             >
-                <h2 className="text-lg font-editorial font-bold text-zinc-900">Orçamentos</h2>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1 mb-6">Controle mensal</p>
+                <h2 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
+                    Orçamentos
+                </h2>
+                <p className="text-xs uppercase tracking-wider mt-1 mb-6" style={{ color: 'var(--text-secondary)' }}>
+                    Controle mensal
+                </p>
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <p className="text-sm text-zinc-400">Nenhum orçamento definido.</p>
-                    <p className="text-xs text-zinc-400 mt-1">
-                        Vá em <span className="font-medium text-zinc-600">Orçamento</span> para configurar.
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Nenhum orçamento definido.</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        Vá em <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Orçamento</span> para configurar.
                     </p>
                 </div>
             </motion.div>
         );
     }
 
-    // Sort: over-budget first, then by percentage used descending
     const sorted = [...budgets]
         .filter(b => b.limit > 0)
         .sort((a, b) => {
@@ -51,15 +53,19 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.4 }}
-            className="bg-white border border-zinc-200 p-6 h-full flex flex-col"
+            className="card-editorial p-6 h-full flex flex-col"
         >
             <div className="flex items-center justify-between mb-5">
                 <div>
-                    <h2 className="text-lg font-editorial font-bold text-zinc-900">Orçamentos</h2>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wider mt-1">Controle mensal</p>
+                    <h2 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
+                        Orçamentos
+                    </h2>
+                    <p className="text-xs uppercase tracking-wider mt-1" style={{ color: 'var(--text-secondary)' }}>
+                        Controle mensal
+                    </p>
                 </div>
                 {sorted.some(b => b.spent / b.limit >= 1) && (
-                    <div className="flex items-center space-x-1.5 text-rose-500">
+                    <div className="flex items-center space-x-1.5" style={{ color: '#f43f5e' }}>
                         <AlertTriangle className="w-3.5 h-3.5" />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Estourado</span>
                     </div>
@@ -72,6 +78,8 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
                     const isOver = percent >= 100;
                     const isWarning = percent >= 80 && !isOver;
                     const barWidth = Math.min(percent, 100);
+                    const barColor = isOver ? '#f43f5e' : isWarning ? '#f59e0b' : '#10b981';
+                    const badgeBg = isOver ? '#f43f5e15' : isWarning ? '#f59e0b15' : '#10b98115';
 
                     return (
                         <motion.div
@@ -81,32 +89,28 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
                             transition={{ delay: 0.45 + index * 0.05, duration: 0.3 }}
                         >
                             <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-sm font-medium text-zinc-700">{budget.category}</span>
+                                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                    {budget.category}
+                                </span>
                                 <div className="flex items-center space-x-2">
-                                    <span className="text-[11px] text-zinc-400">
+                                    <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
                                         {formatCurrency(budget.spent, preferredCurrency)} / {formatCurrency(budget.limit, preferredCurrency)}
                                     </span>
-                                    <span className={clsx(
-                                        'text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5',
-                                        isOver ? 'bg-rose-50 text-rose-600' :
-                                            isWarning ? 'bg-amber-50 text-amber-600' :
-                                                'bg-emerald-50 text-emerald-600'
-                                    )}>
+                                    <span
+                                        className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5"
+                                        style={{ backgroundColor: badgeBg, color: barColor }}
+                                    >
                                         {percent}%
                                     </span>
                                 </div>
                             </div>
-                            <div className="h-1.5 w-full bg-zinc-100 overflow-hidden">
+                            <div className="h-1.5 w-full overflow-hidden" style={{ backgroundColor: 'var(--border-color)', opacity: 0.5 }}>
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${barWidth}%` }}
                                     transition={{ delay: 0.5 + index * 0.05, duration: 0.6, ease: 'easeOut' }}
-                                    className={clsx(
-                                        'h-full',
-                                        isOver ? 'bg-rose-500' :
-                                            isWarning ? 'bg-amber-500' :
-                                                'bg-emerald-500'
-                                    )}
+                                    className="h-full"
+                                    style={{ backgroundColor: barColor }}
                                 />
                             </div>
                         </motion.div>
