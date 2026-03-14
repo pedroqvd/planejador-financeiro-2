@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Logo } from '@/components/Logo';
 import { motion } from 'motion/react';
 import { ShieldCheck, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
@@ -11,6 +12,7 @@ export default function MfaPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { update } = useSession();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,9 +27,9 @@ export default function MfaPage() {
             });
 
             if (res.ok) {
-                // In a real scenario, we might need to update the session or trigger a redirect
-                // For this implementation, we'll assume the API handles the "mfaAuthenticated" state
-                router.push('/dashboard');
+                // Refresh the session so JWT gets updated with mfaVerified: true
+                await update();
+                router.push('/');
                 router.refresh();
             } else {
                 const data = await res.json();
@@ -42,7 +44,7 @@ export default function MfaPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: 'var(--bg-cream)' }}>
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="w-full max-w-md p-8 rounded-3xl space-y-8"
@@ -73,7 +75,7 @@ export default function MfaPage() {
                     </div>
 
                     {error && (
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             className="flex items-center gap-2 p-3 rounded-xl bg-red-50 text-red-600 text-xs font-medium border border-red-100"

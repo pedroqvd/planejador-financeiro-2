@@ -59,34 +59,41 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Mensagem inválida ou vazia.' }, { status: 400 });
         }
 
-        // --- EXTREME DEFENSE: ATOMIC RATE LIMIT CHECK ---
-        // Previne Race Conditions (Check-Then-Act) realizando a verificação e o incremento no momento da trava do banco.
-        // Tentar descontar 1 de cota, SÓ SE ele ainda tiver cota. Se não tiver, o updateMany retorna count: 0 e barramos.
-
-        let userDB = await prisma.user.findUnique({ where: { id: session.user.id } });
-        if (!userDB) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
-
+        // --- ATOMIC QUOTA CHECK (race-condition safe) ---
+        // Combina o reset diário e o incremento em uma única $transaction para evitar
+        // race conditions entre o reset e o increment de duas requisições simultâneas.
+        const userId = session.user.id;
         const hoje = new Date().toDateString();
-        const ultimoUso = userDB.aiLastInteractionAt.toDateString();
 
-        if (hoje !== ultimoUso) {
-            // New day -> Reset count to 0 optimistically
-            userDB = await prisma.user.update({
-                where: { id: userDB.id },
-                data: { aiInteractionsCount: 0, aiLastInteractionAt: new Date() }
+        const quotaResult = await prisma.$transaction(async (tx) => {
+            const userDB = await tx.user.findUnique({
+                where: { id: userId },
+                select: { aiInteractionsCount: true, aiLastInteractionAt: true },
             });
-        }
+            if (!userDB) return null;
 
-        const constraintUpdate = await prisma.user.updateMany({
-            where: {
-                id: session.user.id,
-                aiInteractionsCount: { lt: planLimits.aiRequestsPerMonth } // Só permite atualizar se count for menor que o limite máximo
-            },
-            data: { aiInteractionsCount: { increment: 1 }, aiLastInteractionAt: new Date() }
+            const ultimoUso = userDB.aiLastInteractionAt.toDateString();
+            const currentCount = hoje !== ultimoUso ? 0 : userDB.aiInteractionsCount;
+
+            if (currentCount >= planLimits.aiRequestsPerMonth) {
+                return { allowed: false };
+            }
+
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    aiInteractionsCount: currentCount + 1,
+                    aiLastInteractionAt: new Date(),
+                },
+            });
+            return { allowed: true };
         });
 
-        if (constraintUpdate.count === 0) {
-            // A corrida perdeu: O usuário esgotou as cotas concurrentes.
+        if (!quotaResult) {
+            return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+        }
+
+        if (!quotaResult.allowed) {
             return NextResponse.json(
                 { error: 'Você atingiu o limite de consultas diárias da IA. Faça UPGRADE para continuar usando!' },
                 { status: 403 }
@@ -94,12 +101,9 @@ export async function POST(request: Request) {
         }
 
         if (!process.env.GEMINI_API_KEY) {
-            // Se falhar de sistema, revere a cota
-            await prisma.user.update({ where: { id: session.user.id }, data: { aiInteractionsCount: { decrement: 1 } } });
+            await prisma.user.update({ where: { id: userId }, data: { aiInteractionsCount: { decrement: 1 } } });
             return NextResponse.json({ error: 'Chave da API Gemini não configurada.' }, { status: 500 });
         }
-
-        const userId = session.user.id;
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const userName = session.user.name || 'Usuário';
@@ -189,14 +193,21 @@ ${context}`;
             parts.push(...audioParts);
         }
 
-        const response = await getGeminiClient().models.generateContent({
-            model: 'models/gemini-2.0-flash',
-            contents: [{ role: 'user', parts }],
-            config: {
-                maxOutputTokens: 1000,
-                temperature: 0.7,
-            }
-        });
+        const geminiAbort = new AbortController();
+        const geminiTimeout = setTimeout(() => geminiAbort.abort(), 30_000);
+        let response;
+        try {
+            response = await getGeminiClient().models.generateContent({
+                model: 'models/gemini-2.0-flash',
+                contents: [{ role: 'user', parts }],
+                config: {
+                    maxOutputTokens: 1000,
+                    temperature: 0.7,
+                }
+            });
+        } finally {
+            clearTimeout(geminiTimeout);
+        }
 
         let reply = response.text || 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
 

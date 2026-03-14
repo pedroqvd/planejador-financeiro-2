@@ -13,8 +13,6 @@ export async function POST(req: Request) {
     try {
         const { token, secret, setup } = await req.json();
 
-        // If it's a setup call, we use the secret provided in the request
-        // If it's a login verification, we'd fetch the secret from the user (omitted for brevity in this MVP step)
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
             select: { mfaSecret: true, mfaEnabled: true }
@@ -42,7 +40,8 @@ export async function POST(req: Request) {
                 where: { id: session.user.id },
                 data: {
                     mfaSecret: actualSecret,
-                    mfaEnabled: true
+                    mfaEnabled: true,
+                    mfaVerifiedAt: new Date(),
                 }
             });
 
@@ -52,8 +51,12 @@ export async function POST(req: Request) {
                 details: 'User successfully enabled MFA'
             });
         } else {
-            // Here we would mark the session/JWT as "mfaAuthenticated: true"
-            // For now, we'll just log the success
+            // Mark MFA as verified for this session
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { mfaVerifiedAt: new Date() },
+            });
+
             await logAudit({
                 userId: session.user.id,
                 action: 'MFA_VERIFY_SUCCESS'

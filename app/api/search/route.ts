@@ -1,12 +1,18 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ratelimit } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
+
+    try {
+        const { success } = await ratelimit.limit(`search:${session.user.id}`);
+        if (!success) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
+    } catch { /* dev fallback */ }
 
     const url = new URL(request.url);
     const q = (url.searchParams.get('q') || '').trim().slice(0, 100);

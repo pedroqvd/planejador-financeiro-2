@@ -49,27 +49,34 @@ export async function POST(request: Request) {
             4. Se o nome não estiver claro, use "Compra Scanned".
         `;
 
-        const response = await getGeminiClient().models.generateContent({
-            model: 'models/gemini-2.0-flash',
-            contents: [
-                {
-                    role: 'user',
-                    parts: [
-                        { text: systemPrompt },
-                        {
-                            inlineData: {
-                                mimeType: 'image/jpeg',
-                                data: base64Data
+        const scanAbort = new AbortController();
+        const scanTimeout = setTimeout(() => scanAbort.abort(), 30_000);
+        let response;
+        try {
+            response = await getGeminiClient().models.generateContent({
+                model: 'models/gemini-2.0-flash',
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            { text: systemPrompt },
+                            {
+                                inlineData: {
+                                    mimeType: 'image/jpeg',
+                                    data: base64Data
+                                }
                             }
-                        }
-                    ]
+                        ]
+                    }
+                ],
+                config: {
+                    maxOutputTokens: 500,
+                    temperature: 0.1,
                 }
-            ],
-            config: {
-                maxOutputTokens: 500,
-                temperature: 0.1,
-            }
-        });
+            });
+        } finally {
+            clearTimeout(scanTimeout);
+        }
 
         const reply = response.text || '';
 
