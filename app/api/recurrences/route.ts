@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
-    const VALID_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly'];
+    const VALID_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly', 'annual'];
     const MAX_AMOUNT = 99_999_999;
 
     try {
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
                 category: validCategory,
                 amount: parsedAmount,
                 type,
-                frequency: frequency || 'monthly',
+                frequency: (frequency === 'annual' ? 'yearly' : frequency) || 'monthly',
                 nextDueDate: parsedDate,
                 icon: icon ? String(icon).slice(0, 50) : 'RefreshCcw',
                 color: color ? String(color).slice(0, 30) : 'violet',

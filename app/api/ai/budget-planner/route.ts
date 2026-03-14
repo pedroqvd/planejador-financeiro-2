@@ -73,7 +73,7 @@ Sua tarefa é sugerir um teto de gastos ideal (budget) para o próximo mês por 
 Não inclua nenhum texto Markdown ou backticks \`\`\`json na resposta, APENAS O JSON PURO.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'models/gemini-2.0-flash',
             contents: prompt,
             config: {
                 temperature: 0.2, // Low temp for more deterministic parsing

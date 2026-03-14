@@ -53,7 +53,7 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
 
     useEffect(() => {
       if (isRecording) {
-        timerRef.current = window.setInterval(() => setRecordingTime(t => t + 1), 1000) as any;
+        timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
       } else {
         if (timerRef.current) clearInterval(timerRef.current);
         setRecordingTime(0);

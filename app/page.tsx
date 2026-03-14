@@ -286,13 +286,9 @@ export default function Dashboard() {
                     </p>
                   )}
 
-                  <button
-                    onClick={() => (window as any).openChat?.()}
-                    className="button-editorial mt-4 w-full py-2.5"
-                    style={{ border: '1px solid var(--border-color)', color: 'var(--accent-ink)' }}
-                  >
-                    Consultar IA
-                  </button>
+                  <p className="text-[10px] mt-3 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+                    Use o chat no canto inferior direito para consultar
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -306,7 +302,7 @@ export default function Dashboard() {
             onClose={() => setShowAddModal(false)}
             onSuccess={() => {
               setShowAddModal(false);
-              window.location.reload();
+              fetchDashboard();
             }}
           />
         )}
@@ -315,7 +311,7 @@ export default function Dashboard() {
             onClose={() => setShowSmartBudgetModal(false)}
             onSuccess={() => {
               setShowSmartBudgetModal(false);
-              window.location.reload();
+              fetchDashboard();
             }}
           />
         )}

@@ -15,6 +15,7 @@ import {
     Coffee, Briefcase, CreditCard, Loader2, FileDown
 } from 'lucide-react';
 import { generateFinancialPDF } from '@/lib/generate-pdf';
+import { formatCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
 
 type TimelineEntry = { label: string; key: string; income: number; expenses: number; balance: number };
@@ -29,10 +30,6 @@ type AnalyticsData = {
     topExpenses: TopExpense[];
     currentMonth: string;
 };
-
-function formatCurrency(value: number) {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
 
 const CATEGORY_COLORS: Record<string, string> = {
     'Alimentação': '#f59e0b',

@@ -87,10 +87,10 @@ export async function POST(request: Request) {
             });
             if (!userDB) return null;
 
-            const ultimoUso = userDB.aiLastInteractionAt.toDateString();
+            const ultimoUso = userDB.aiLastInteractionAt?.toDateString() ?? '';
             const currentCount = hoje !== ultimoUso ? 0 : userDB.aiInteractionsCount;
 
-            if (currentCount >= planLimits.aiRequestsPerMonth) {
+            if (currentCount >= planLimits.aiRequestsPerDay) {
                 return { allowed: false };
             }
 

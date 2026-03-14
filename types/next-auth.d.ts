@@ -1,4 +1,5 @@
 import 'next-auth';
+import 'next-auth/jwt';
 
 declare module 'next-auth' {
     interface Session {
@@ -8,6 +9,9 @@ declare module 'next-auth' {
             email: string;
             image?: string | null;
             plan: string;
+            preferredCurrency: string;
+            mfaEnabled: boolean;
+            mfaVerified: boolean;
         };
     }
 
@@ -17,5 +21,20 @@ declare module 'next-auth' {
         email: string;
         image?: string | null;
         plan: string;
+        preferredCurrency: string;
+        mfaEnabled: boolean;
+        mfaVerified: boolean;
+    }
+}
+
+declare module 'next-auth/jwt' {
+    interface JWT {
+        id: string;
+        plan: string;
+        preferredCurrency: string;
+        mfaEnabled: boolean;
+        mfaVerified: boolean;
+        issuedAt: number;
+        invalidated?: boolean;
     }
 }

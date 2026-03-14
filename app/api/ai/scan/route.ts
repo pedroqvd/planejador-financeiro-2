@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     } catch { /* dev fallback */ }
 
     try {
-        const { image } = await request.json(); // base64 image data
+        const { image, mimeType: clientMimeType } = await request.json(); // base64 image data
         if (!image) {
             return NextResponse.json({ error: 'Imagem é obrigatória.' }, { status: 400 });
         }
@@ -49,34 +49,27 @@ export async function POST(request: Request) {
             4. Se o nome não estiver claro, use "Compra Scanned".
         `;
 
-        const scanAbort = new AbortController();
-        const scanTimeout = setTimeout(() => scanAbort.abort(), 30_000);
-        let response;
-        try {
-            response = await getGeminiClient().models.generateContent({
-                model: 'models/gemini-2.0-flash',
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            { text: systemPrompt },
-                            {
-                                inlineData: {
-                                    mimeType: 'image/jpeg',
-                                    data: base64Data
-                                }
+        const response = await getGeminiClient().models.generateContent({
+            model: 'models/gemini-2.0-flash',
+            contents: [
+                {
+                    role: 'user',
+                    parts: [
+                        { text: systemPrompt },
+                        {
+                            inlineData: {
+                                mimeType: ['image/jpeg', 'image/png', 'image/webp'].includes(clientMimeType) ? clientMimeType : 'image/jpeg',
+                                data: base64Data
                             }
-                        ]
-                    }
-                ],
-                config: {
-                    maxOutputTokens: 500,
-                    temperature: 0.1,
+                        }
+                    ]
                 }
-            });
-        } finally {
-            clearTimeout(scanTimeout);
-        }
+            ],
+            config: {
+                maxOutputTokens: 500,
+                temperature: 0.1,
+            }
+        });
 
         const reply = response.text || '';
 

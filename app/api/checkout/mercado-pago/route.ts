@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { MercadoPagoConfig, PreApproval } from 'mercadopago';
-
-// In production, you would fetch these from a database or use MercadoPago PreApprovalPlan API
-const PLAN_PRICES = {
-    pro: 14.90,
-    premium: 29.90,
-};
+import { PLANS } from '@/lib/plans';
 
 export async function POST(req: Request) {
     try {
@@ -20,6 +15,10 @@ export async function POST(req: Request) {
 
         if (planId !== 'pro' && planId !== 'premium') {
             return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
+        }
+
+        if (!session.user.email) {
+            return NextResponse.json({ error: 'Email do usuário é obrigatório para checkout.' }, { status: 400 });
         }
 
         const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -49,11 +48,11 @@ export async function POST(req: Request) {
         const subscriptionData = {
             reason: `WealthCash ${planId.toUpperCase()}`,
             external_reference: session.user.id,
-            payer_email: session.user.email || 'test_user@testuser.com', // Must be an email, ideally from session
+            payer_email: session.user.email!, // Email is required for checkout
             auto_recurring: {
                 frequency: 1,
                 frequency_type: 'months',
-                transaction_amount: PLAN_PRICES[planId as 'pro' | 'premium'],
+                transaction_amount: PLANS[planId as 'pro' | 'premium'].price,
                 currency_id: 'BRL',
             },
             back_url: `${baseDomain}/settings?success=true`,

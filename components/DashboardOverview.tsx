@@ -19,6 +19,9 @@ type ChartData = {
 }[];
 
 function Sparkline({ data, color }: { data: number[]; color: string }) {
+  if (data.length <= 1) {
+    return <svg width={80} height={36} />;
+  }
   const max = Math.max(...data, 1);
   const min = Math.min(...data, 0);
   const range = max - min || 1;

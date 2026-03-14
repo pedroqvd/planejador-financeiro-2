@@ -94,8 +94,8 @@ function ResetForm() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition-all bg-transparent"
-                            placeholder="Mínimo 6 caracteres"
-                            minLength={6}
+                            placeholder="Mínimo 8 caracteres"
+                            minLength={8}
                             required
                         />
                     </div>

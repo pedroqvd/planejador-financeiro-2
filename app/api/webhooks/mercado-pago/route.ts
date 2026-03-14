@@ -112,14 +112,14 @@ export async function POST(req: Request) {
                     });
                     console.log(`[MercadoPago Webhook] User ${userId} upgraded to ${plan.toUpperCase()}`);
                 }
-            } else if (subscription && subscription.status === 'cancelled') {
+            } else if (subscription && ['cancelled', 'paused', 'suspended'].includes(subscription.status || '')) {
                 const userId = subscription.external_reference;
                 if (userId) {
                     await prisma.user.update({
                         where: { id: userId },
-                        data: { plan: 'free' } // Downgraded
+                        data: { plan: 'free' }
                     });
-                    console.log(`[MercadoPago Webhook] User ${userId} subscription cancelled, downgraded to FREE`);
+                    console.log(`[MercadoPago Webhook] User ${userId} subscription ${subscription.status}, downgraded to FREE`);
                 }
             }
         }

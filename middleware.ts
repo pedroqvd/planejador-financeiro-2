@@ -25,9 +25,9 @@ export default auth((req) => {
 
     // Allow the MFA verification page for logged-in users pending MFA
     if (isMfaPage && isLoggedIn) {
-        const mfaVerified = (req.auth?.user as any)?.mfaVerified;
+        const mfaVerified = req.auth?.user?.mfaVerified;
         // If already verified, redirect to dashboard
-        if (mfaVerified !== false) {
+        if (mfaVerified === true) {
             return NextResponse.redirect(new URL('/', req.nextUrl));
         }
         return NextResponse.next();
@@ -45,7 +45,7 @@ export default auth((req) => {
 
     // Enforce MFA: if user has MFA enabled but not yet verified, redirect to MFA page
     if (isLoggedIn && !isPublicPage) {
-        const mfaVerified = (req.auth?.user as any)?.mfaVerified;
+        const mfaVerified = req.auth?.user?.mfaVerified;
         if (mfaVerified === false) {
             return NextResponse.redirect(new URL('/login/mfa', req.nextUrl));
         }

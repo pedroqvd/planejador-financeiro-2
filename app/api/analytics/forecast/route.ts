@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ratelimit } from '@/lib/rate-limit';
 import { addDays, format, isSameDay } from 'date-fns';
 
 export async function GET() {
@@ -9,6 +10,11 @@ export async function GET() {
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
         }
+
+        try {
+            const { success } = await ratelimit.limit(`forecast:${session.user.id}`);
+            if (!success) return NextResponse.json({ error: 'Muitas requisições.' }, { status: 429 });
+        } catch { /* dev fallback */ }
 
         const userId = session.user.id;
 

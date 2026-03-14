@@ -43,7 +43,7 @@ vi.mock('@/lib/rate-limit', () => ({
 
 // Mock plans
 vi.mock('@/lib/plans', () => ({
-    getPlanLimits: vi.fn().mockReturnValue({ transactionsPerMonth: Infinity, goalsCount: Infinity, budgetsCount: Infinity, aiRequestsPerMonth: Infinity }),
+    getPlanLimits: vi.fn().mockReturnValue({ transactionsPerMonth: Infinity, goalsCount: Infinity, budgetsCount: Infinity, aiRequestsPerDay: Infinity }),
     checkMonthlyLimit: vi.fn().mockReturnValue(true),
 }));
 
