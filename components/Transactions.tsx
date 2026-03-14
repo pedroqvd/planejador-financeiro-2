@@ -14,7 +14,6 @@ import {
   Search,
   X
 } from 'lucide-react';
-import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useMemo } from 'react';
 
@@ -133,43 +132,46 @@ export function Transactions({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.4 }}
-      className="bg-white dark:bg-zinc-900 p-6 border border-zinc-200 dark:border-zinc-800 relative"
+      className="card-editorial p-6 relative"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center space-x-3">
           <button
             onClick={toggleSelectAll}
-            className={clsx(
-              "w-4 h-4 border transition-all flex items-center justify-center",
-              selectedIds.size > 0 && selectedIds.size < displayData.length ? "border-zinc-400 bg-zinc-100" :
-                selectedIds.size === displayData.length && displayData.length > 0 ? "border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100" :
-                  "border-zinc-300 dark:border-zinc-700 hover:border-zinc-400"
-            )}
+            className="w-4 h-4 flex items-center justify-center flex-shrink-0 transition-all"
+            style={{
+              border: `1px solid ${selectedIds.size > 0 ? 'var(--text-primary)' : 'var(--border-color)'}`,
+              backgroundColor: selectedIds.size === displayData.length && displayData.length > 0 ? 'var(--text-primary)' : 'transparent'
+            }}
           >
             {selectedIds.size === displayData.length && displayData.length > 0 && (
-              <Check className="w-3 h-3 text-white dark:text-zinc-900" />
+              <Check className="w-3 h-3" style={{ color: 'var(--bg-cream)' }} />
             )}
             {selectedIds.size > 0 && selectedIds.size < displayData.length && (
-              <div className="w-2 h-0.5 bg-zinc-500" />
+              <div className="w-2 h-0.5" style={{ backgroundColor: 'var(--text-secondary)' }} />
             )}
           </button>
-          <h2 className="text-lg font-editorial font-bold text-zinc-900 dark:text-zinc-100">Transações Recentes</h2>
+          <h2 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
+            Transações Recentes
+          </h2>
         </div>
 
         <div className="flex items-center space-x-4">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-zinc-100 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors" style={{ color: 'var(--text-secondary)' }} />
             <input
               type="text"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               placeholder="Filtrar..."
-              className="pl-8 pr-8 py-1.5 bg-zinc-50 dark:bg-zinc-800/50 border-0 border-b border-zinc-200 dark:border-zinc-700 rounded-none text-xs focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-100 transition-all w-32 sm:w-40"
+              className="pl-8 pr-8 py-1.5 border-0 border-b text-xs focus:outline-none transition-all w-32 sm:w-40"
+              style={{ borderColor: 'var(--border-color)', backgroundColor: 'transparent' }}
             />
             {filter && (
               <button
                 onClick={() => setFilter('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -178,7 +180,8 @@ export function Transactions({
           {limit && data.length > limit && (
             <a
               href="/transactions"
-              className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              className="text-[11px] font-semibold uppercase tracking-wider transition-colors"
+              style={{ color: 'var(--accent-ink)' }}
             >
               Ver todas →
             </a>
@@ -186,18 +189,19 @@ export function Transactions({
         </div>
       </div>
 
-      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+      <div>
         <AnimatePresence mode='popLayout'>
           {displayData.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 text-zinc-400 dark:text-zinc-500 text-sm"
+              className="text-center py-12 text-sm"
+              style={{ color: 'var(--text-secondary)' }}
             >
               {filter ? 'Nenhum resultado para este filtro.' : 'Nenhuma transação registrada ainda.'}
             </motion.div>
           ) : (
-            displayData.map((transaction, index) => {
+            displayData.map((transaction) => {
               const style = getCategoryStyle(transaction.category);
               const IconComponent = style.icon;
               const isConfirming = confirmId === transaction.id;
@@ -212,81 +216,93 @@ export function Transactions({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className={clsx(
-                    "flex items-center justify-between py-3 transition-all duration-200 group -mx-2 px-4 border-l-2",
-                    isSelected ? "bg-zinc-50 dark:bg-zinc-800/50 border-zinc-900 dark:border-zinc-100" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/20 border-transparent"
-                  )}
+                  className="flex items-center justify-between py-3 transition-all duration-200 group -mx-2 px-4 border-l-2"
+                  style={{
+                    borderLeftColor: isSelected ? 'var(--accent-ink)' : 'transparent',
+                    backgroundColor: isSelected ? 'var(--bg-input)' : 'transparent',
+                    borderBottom: '1px solid var(--border-color)',
+                    borderBottomWidth: '0.5px',
+                  }}
                 >
                   <div className="flex items-center space-x-4 flex-1 min-w-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleSelect(transaction.id); }}
-                      className={clsx(
-                        "w-4 h-4 border transition-all flex items-center justify-center flex-shrink-0 sm:opacity-0 group-hover:opacity-100",
-                        isSelected ? "opacity-100 border-zinc-900 bg-zinc-900 dark:border-zinc-100 dark:bg-zinc-100" : "border-zinc-300 dark:border-zinc-700"
-                      )}
+                      className="w-4 h-4 flex items-center justify-center flex-shrink-0 sm:opacity-0 group-hover:opacity-100 transition-all"
+                      style={{
+                        border: `1px solid ${isSelected ? 'var(--text-primary)' : 'var(--border-color)'}`,
+                        backgroundColor: isSelected ? 'var(--text-primary)' : 'transparent',
+                        opacity: isSelected ? 1 : undefined,
+                      }}
                     >
-                      {isSelected && <Check className="w-3 h-3 text-white dark:text-zinc-900" />}
+                      {isSelected && <Check className="w-3 h-3" style={{ color: 'var(--bg-cream)' }} />}
                     </button>
 
-                    <div className="w-9 h-9 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center flex-shrink-0 transition-colors duration-200 group-hover:border-zinc-300 dark:group-hover:border-zinc-700">
-                      <IconComponent className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+                    <div
+                      className="w-9 h-9 flex items-center justify-center flex-shrink-0"
+                      style={{ border: '1px solid var(--border-color)' }}
+                    >
+                      <IconComponent className="w-4 h-4 text-zinc-500" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{transaction.name}</p>
-                      <div className="flex items-center space-x-2 text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5 uppercase tracking-wider">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                        {transaction.name}
+                      </p>
+                      <div className="flex items-center space-x-2 text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         <span>{transaction.category}</span>
-                        <span className="w-[3px] h-[3px] bg-zinc-300 dark:bg-zinc-700 rounded-full" />
+                        <span className="w-[3px] h-[3px] rounded-full" style={{ backgroundColor: 'var(--border-color)' }} />
                         <span>{new Date(transaction.date).toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-3">
-                    <p className={clsx(
-                      'text-sm font-editorial font-bold whitespace-nowrap',
-                      transaction.type === 'income' ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400'
-                    )}>
+                    <p
+                      className="text-sm font-editorial font-bold whitespace-nowrap"
+                      style={{ color: transaction.type === 'income' ? '#10b981' : '#f43f5e' }}
+                    >
                       {transaction.type === 'income' ? '+ ' : '- '}
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: preferredCurrency }).format(Math.abs(transaction.amount))}
                     </p>
 
-                    {/* Action buttons (visible on hover) */}
                     {!isConfirming && selectedIds.size === 0 && (
                       <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {onEdit && (
                           <button
                             onClick={() => onEdit(transaction)}
-                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                            className="p-1.5 transition-colors"
                             title="Editar"
+                            style={{ color: 'var(--text-secondary)' }}
                           >
-                            <Pencil className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-200" />
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                         )}
                         {onDelete && (
                           <button
                             onClick={() => setConfirmId(transaction.id)}
-                            className="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                            className="p-1.5 transition-colors hover:text-rose-500"
                             title="Excluir"
+                            style={{ color: 'var(--text-secondary)' }}
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-zinc-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
                     )}
 
-                    {/* Delete confirmation */}
                     {isConfirming && (
                       <div className="flex items-center space-x-1">
                         <button
                           onClick={() => handleDelete(transaction.id)}
                           disabled={isDeleting}
-                          className="px-2 py-1 bg-rose-600 text-white text-[10px] uppercase tracking-wider font-medium hover:bg-rose-700 transition-all disabled:opacity-50"
+                          className="button-editorial px-2 py-1 text-[10px] text-white disabled:opacity-50"
+                          style={{ backgroundColor: '#f43f5e' }}
                         >
                           {isDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sim'}
                         </button>
                         <button
                           onClick={() => setConfirmId(null)}
-                          className="px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-[10px] uppercase tracking-wider font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+                          className="button-editorial px-2 py-1 text-[10px]"
+                          style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
                         >
                           Não
                         </button>
@@ -300,36 +316,38 @@ export function Transactions({
         </AnimatePresence>
       </div>
 
-      {/* Floating Bulk Action Bar */}
+      {/* Bulk Action Bar */}
       <AnimatePresence>
         {selectedIds.size > 0 && (
           <motion.div
             initial={{ y: 80, x: '-50%', opacity: 0 }}
             animate={{ y: 0, x: '-50%', opacity: 1 }}
             exit={{ y: 80, x: '-50%', opacity: 0 }}
-            className="fixed bottom-8 left-1/2 z-50 flex items-center bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-4 shadow-2xl space-x-6 min-w-[320px]"
+            className="fixed bottom-8 left-1/2 z-50 flex items-center px-6 py-4 space-x-6 min-w-[320px]"
+            style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)', boxShadow: 'var(--shadow-lg)' }}
           >
             <div className="flex flex-col">
               <span className="text-[10px] uppercase tracking-widest font-bold opacity-60">Selecionados</span>
               <span className="text-sm font-editorial font-bold">{selectedIds.size} itens</span>
             </div>
 
-            <div className="h-8 w-px bg-white/10 dark:bg-zinc-200" />
+            <div className="h-8 w-px opacity-20" style={{ backgroundColor: 'var(--bg-cream)' }} />
 
             <div className="flex items-center space-x-3">
               {showBulkConfirm ? (
                 <div className="flex items-center space-x-2">
-                  <span className="text-[10px] uppercase font-bold text-rose-400">Excluir todos?</span>
+                  <span className="text-[10px] uppercase font-bold" style={{ color: '#f43f5e' }}>Excluir todos?</span>
                   <button
                     onClick={handleBulkDelete}
                     disabled={isBulkDeleting}
-                    className="px-3 py-1 bg-rose-600 text-[10px] font-bold uppercase tracking-wider hover:bg-rose-500 transition-all disabled:opacity-50"
+                    className="button-editorial px-3 py-1 text-[10px] disabled:opacity-50"
+                    style={{ backgroundColor: '#f43f5e', color: 'white' }}
                   >
                     {isBulkDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirmar'}
                   </button>
                   <button
                     onClick={() => setShowBulkConfirm(false)}
-                    className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider hover:bg-white/10 dark:hover:bg-zinc-200 transition-all"
+                    className="button-editorial px-3 py-1 text-[10px] opacity-60 hover:opacity-100 transition-all"
                   >
                     Mudei de ideia
                   </button>
@@ -338,10 +356,11 @@ export function Transactions({
                 <>
                   <button
                     onClick={() => setShowBulkConfirm(true)}
-                    className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest hover:text-rose-400 transition-colors"
+                    className="flex items-center space-x-2 text-[10px] font-bold uppercase tracking-widest hover:opacity-70 transition-colors"
+                    style={{ color: '#f43f5e' }}
                   >
                     <Trash2 className="w-4 h-4" />
-                    <span>Excluir Seleção</span>
+                    <span>Excluir</span>
                   </button>
                   <button
                     onClick={() => setSelectedIds(new Set())}
@@ -360,7 +379,7 @@ export function Transactions({
   );
 }
 
-function Check({ className }: { className: string }) {
+function Check({ className, style }: { className: string; style?: React.CSSProperties }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -373,6 +392,7 @@ function Check({ className }: { className: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      style={style}
     >
       <polyline points="20 6 9 17 4 12" />
     </svg>
