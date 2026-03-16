@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Wallet } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 type Budget = {
     id: string;
@@ -10,10 +11,6 @@ type Budget = {
     spent: number;
     month: string;
 };
-
-function formatCurrency(value: number, currency = 'BRL') {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency });
-}
 
 export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets: Budget[], preferredCurrency?: string }) {
     if (!budgets || budgets.length === 0) {
@@ -30,10 +27,13 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
                 <p className="text-xs uppercase tracking-wider mt-1 mb-6" style={{ color: 'var(--text-secondary)' }}>
                     Controle mensal
                 </p>
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Nenhum orçamento definido.</p>
-                    <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                        Vá em <span className="font-medium" style={{ color: 'var(--text-primary)' }}>Orçamento</span> para configurar.
+                <div className="empty-state">
+                    <div className="empty-state-icon">
+                        <Wallet className="w-full h-full" />
+                    </div>
+                    <p className="empty-state-title">Nenhum orçamento</p>
+                    <p className="empty-state-text">
+                        Configure limites em <span className="font-medium" style={{ color: 'var(--accent-ink)' }}>Orçamento</span> para acompanhar seus gastos.
                     </p>
                 </div>
             </motion.div>

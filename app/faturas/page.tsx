@@ -4,10 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { CreditCard, ShoppingBag, Loader2, ChevronRight, ChevronLeft, TrendingDown, CalendarDays } from 'lucide-react';
-
-function formatCurrency(value: number) {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
+import { formatCurrency } from '@/lib/currency';
 
 function DonutChart({ percent }: { percent: number }) {
     const radius = 56;

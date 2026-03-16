@@ -32,7 +32,7 @@ export default function LoginPage() {
             } else {
                 // Check if user needs MFA verification
                 const session = await getSession();
-                if (session?.user && (session.user as any).mfaVerified === false) {
+                if (session?.user && session.user.mfaVerified === false) {
                     router.push('/login/mfa');
                 } else {
                     router.push('/');
@@ -55,31 +55,32 @@ export default function LoginPage() {
                 className="relative w-full max-w-md"
             >
                 {/* Logo */}
-                <Link 
-                    href="/landing" 
+                <Link
+                    href="/landing"
                     className="flex items-center justify-center space-x-3 mb-10 group transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
                 >
-                    <Logo className="w-10 h-10 text-zinc-900 transition-transform group-hover:rotate-12" />
-                    <span className="text-2xl font-editorial font-bold tracking-tight text-zinc-900">WealthCash</span>
+                    <Logo className="w-10 h-10 transition-transform group-hover:rotate-12" style={{ color: 'var(--text-primary)' }} />
+                    <span className="text-2xl font-editorial font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>WealthCash</span>
                 </Link>
 
                 {/* Card */}
-                <div className="bg-white border border-zinc-200 p-8">
+                <div className="p-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-editorial font-bold text-zinc-900 mb-2">Bem-vindo de volta</h1>
-                        <p className="text-zinc-500 text-xs uppercase tracking-wider">Acesse sua conta para continuar</p>
+                        <h1 className="text-2xl font-editorial font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Bem-vindo de volta</h1>
+                        <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Acesse sua conta para continuar</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Email</label>
+                            <label className="block text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Email</label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-white border-0 border-b border-zinc-200 rounded-none text-zinc-900 placeholder-zinc-400 text-sm focus:outline-none focus:border-zinc-900 transition-all duration-200"
+                                    className="w-full pl-10 pr-4 py-3 border-0 border-b text-sm transition-all duration-200"
+                                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                                     placeholder="seu@email.com"
                                     required
                                 />
@@ -87,20 +88,21 @@ export default function LoginPage() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Senha</label>
+                            <label className="block text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Senha</label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-white border-0 border-b border-zinc-200 rounded-none text-zinc-900 placeholder-zinc-400 text-sm focus:outline-none focus:border-zinc-900 transition-all duration-200"
+                                    className="w-full pl-10 pr-4 py-3 border-0 border-b text-sm transition-all duration-200"
+                                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                                     placeholder="••••••••"
                                     required
                                 />
                             </div>
                             <div className="text-right">
-                                <a href="/forgot-password" className="text-xs text-zinc-500 hover:text-zinc-900 uppercase tracking-wider transition-colors">
+                                <a href="/forgot-password" className="text-xs uppercase tracking-wider transition-colors hover:opacity-70" style={{ color: 'var(--text-secondary)' }}>
                                     Esqueci minha senha
                                 </a>
                             </div>
@@ -109,7 +111,8 @@ export default function LoginPage() {
                             <motion.div
                                 initial={{ opacity: 0, y: -4 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-3 border border-zinc-200 text-sm text-zinc-700 text-center bg-zinc-50"
+                                className="p-3 text-sm text-center"
+                                style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}
                             >
                                 {error}
                             </motion.div>
@@ -118,7 +121,8 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all duration-200 disabled:opacity-60 flex items-center justify-center space-x-2"
+                            className="w-full py-3 text-xs font-medium uppercase tracking-wider transition-all duration-200 disabled:opacity-60 flex items-center justify-center space-x-2 hover:opacity-90"
+                            style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
                         >
                             {loading ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -132,9 +136,9 @@ export default function LoginPage() {
                     </form>
 
                     <div className="mt-6 text-center">
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                             Não tem uma conta?{' '}
-                            <Link href="/register" className="text-zinc-900 font-semibold hover:underline transition-colors">
+                            <Link href="/register" className="font-semibold hover:underline transition-colors" style={{ color: 'var(--accent-ink)' }}>
                                 Criar conta
                             </Link>
                         </p>

@@ -40,7 +40,13 @@ export async function POST(req: Request) {
         const payload = JSON.parse(bodyText);
         const { event, id, itemId } = payload;
 
-        console.log(`[Pluggy Webhook] Received event: ${event} for Item: ${itemId || id}`);
+        // Idempotency: skip already-processed events
+        const eventId = `pluggy:${itemId || id}:${event}`;
+        const existing = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
+        if (existing) {
+            return NextResponse.json({ received: true, duplicate: true });
+        }
+        await prisma.webhookEvent.create({ data: { id: eventId, source: 'pluggy' } });
 
         switch (event) {
             case 'item/created':

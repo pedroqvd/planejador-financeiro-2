@@ -10,12 +10,15 @@ dist/
 build/
 coverage/
 
-# Environment
+# Environment / Secrets
 .env
 .env.local
 .env.production
 .env.staging
 !.env.example
+config_vercel*
+*credentials*
+*secrets*
 
 # Database
 *.db

@@ -56,8 +56,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     name: user.name,
                     email: user.email,
                     plan: user.plan,
-                    preferredCurrency: (user as any).preferredCurrency || 'BRL',
-                    mfaEnabled: (user as any).mfaEnabled || false,
+                    preferredCurrency: user.preferredCurrency || 'BRL',
+                    mfaEnabled: user.mfaEnabled || false,
                     mfaVerified: !user.mfaEnabled, // true if no MFA, false if MFA enabled
                 };
             },
@@ -72,12 +72,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     callbacks: {
         async jwt({ token, user, trigger }) {
             if (user) {
-                token.id = user.id;
-                token.plan = (user as any).plan || 'free';
-                token.preferredCurrency = (user as any).preferredCurrency || 'BRL';
-                token.mfaEnabled = (user as any).mfaEnabled || false;
-                token.mfaVerified = (user as any).mfaVerified ?? true;
+                token.id = user.id!;
+                token.plan = user.plan || 'free';
+                token.preferredCurrency = user.preferredCurrency || 'BRL';
+                token.mfaEnabled = user.mfaEnabled || false;
+                token.mfaVerified = user.mfaVerified ?? true;
+                token.issuedAt = Date.now();
             }
+
+            // Invalidate session if password was changed after token was issued
+            if (token.id && token.issuedAt) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: token.id as string },
+                    // @ts-ignore
+                    select: { passwordChangedAt: true },
+                });
+                if (dbUser?.passwordChangedAt && new Date(dbUser.passwordChangedAt).getTime() > (token.issuedAt as number)) {
+                    // Return empty token to force sign-out
+                    return { ...token, invalidated: true };
+                }
+            }
+
             // Refresh from DB on session update (triggered after MFA verification or settings change)
             if (trigger === 'update' && token.id) {
                 const dbUser = await prisma.user.findUnique({
@@ -87,25 +102,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 });
                 if (dbUser) {
                     token.plan = dbUser.plan;
-                    token.preferredCurrency = (dbUser as any).preferredCurrency || 'BRL';
-                    token.mfaEnabled = (dbUser as any).mfaEnabled || false;
-                    // If MFA is enabled and was recently verified, mark as verified
-                    if ((dbUser as any).mfaEnabled && (dbUser as any).mfaVerifiedAt) {
+                    token.preferredCurrency = dbUser.preferredCurrency || 'BRL';
+                    token.mfaEnabled = dbUser.mfaEnabled || false;
+                    if (dbUser.mfaEnabled && dbUser.mfaVerifiedAt) {
                         token.mfaVerified = true;
-                    } else if (!(dbUser as any).mfaEnabled) {
+                    } else if (!dbUser.mfaEnabled) {
                         token.mfaVerified = true;
+                    } else {
+                        // MFA enabled but not yet verified
+                        token.mfaVerified = false;
                     }
                 }
             }
             return token;
         },
         async session({ session, token }) {
+            // If token was invalidated (password changed), clear the session
+            if (token.invalidated) {
+                session.user = undefined as any;
+                return session;
+            }
             if (session.user) {
-                session.user.id = token.id as string;
-                (session.user as any).plan = token.plan as string;
-                (session.user as any).preferredCurrency = token.preferredCurrency as string;
-                (session.user as any).mfaEnabled = token.mfaEnabled as boolean;
-                (session.user as any).mfaVerified = token.mfaVerified as boolean;
+                session.user.id = token.id;
+                session.user.plan = token.plan;
+                session.user.preferredCurrency = token.preferredCurrency;
+                session.user.mfaEnabled = token.mfaEnabled;
+                session.user.mfaVerified = token.mfaVerified;
             }
             return session;
         },

@@ -19,6 +19,11 @@ vi.mock('motion/react', () => {
     ));
     MockCircle.displayName = 'motion.circle';
 
+    const MockSpan = React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLSpanElement>) => (
+        React.createElement('span', { ...filterMotionProps(props), ref }, children)
+    ));
+    MockSpan.displayName = 'motion.span';
+
     const MockPresence = ({ children }: React.PropsWithChildren) => React.createElement(React.Fragment, null, children);
     MockPresence.displayName = 'AnimatePresence';
 
@@ -27,6 +32,7 @@ vi.mock('motion/react', () => {
             div: MockDiv,
             p: MockP,
             circle: MockCircle,
+            span: MockSpan,
         },
         AnimatePresence: MockPresence,
     };
@@ -65,8 +71,8 @@ describe('DashboardOverview', () => {
         );
 
         // Check new card labels are in the document
-        expect(screen.getByText(/Receitas do mês/i)).toBeInTheDocument();
-        expect(screen.getByText(/Despesas do mês/i)).toBeInTheDocument();
+        expect(screen.getByText(/Receitas/i)).toBeInTheDocument();
+        expect(screen.getByText(/Despesas/i)).toBeInTheDocument();
         expect(screen.getByText(/Saldo Líquido/i)).toBeInTheDocument();
         expect(screen.getByText(/Saúde Financeira/i)).toBeInTheDocument();
     });
@@ -84,22 +90,23 @@ describe('DashboardOverview', () => {
         );
 
         // Check that values are formatted in BRL
-        // 8000 (Income), 3000 (Expenses), 5000 (Balance)
+        // 8000 (Income), 3000 (Expenses), 5000 (Balance & Investments)
         expect(screen.getByText(/8\.000,00/)).toBeInTheDocument();
         expect(screen.getByText(/3\.000,00/)).toBeInTheDocument();
-        expect(screen.getByText(/5\.000,00/)).toBeInTheDocument();
+        // Balance (8000-3000=5000) and Investments (5000) both show 5.000,00
+        expect(screen.getAllByText(/5\.000,00/).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('should render balance card with dark background', () => {
+    it('should render balance card with editorial styling', () => {
         const { container } = render(
             <DashboardOverview
                 stats={{ netWorth: 1000, income: 500, expenses: 200, investments: 300 }}
             />
         );
 
-        // The balance card should have dark background (bg-zinc-900)
-        const darkCard = container.querySelector('.bg-zinc-900');
-        expect(darkCard).toBeInTheDocument();
-        expect(darkCard).toHaveTextContent(/Saldo Líquido/i);
+        // The balance card should use card-editorial class
+        const editorialCards = container.querySelectorAll('.card-editorial');
+        expect(editorialCards.length).toBeGreaterThan(0);
+        expect(screen.getByText(/Saldo Líquido/i)).toBeInTheDocument();
     });
 });

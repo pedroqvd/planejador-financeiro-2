@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { getGeminiClient } from '@/lib/gemini';
 import { aiCoachRatelimit } from '@/lib/rate-limit';
 import { sendPushNotification } from '@/lib/firebase-admin';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
     const session = await auth();
@@ -16,12 +17,7 @@ export async function GET() {
     const userId = session.user.id;
     const userPlan = session.user.plan || 'free';
 
-    // Gate: Pro/Premium only
-    if (userPlan === 'free') {
-        return NextResponse.json({ error: 'Plano incompatível para o Coach.' }, { status: 403 });
-    }
-
-    // Rate limit check: 3 per 10 mins
+    // Rate limit check: 3 per 10 mins (free gets 1 per 10 mins)
     try {
         const { success } = await aiCoachRatelimit.limit(`coach:${userId}`);
         if (!success) {
@@ -139,7 +135,7 @@ ${context}`;
             const clearJson = reply.replace(/```json/g, '').replace(/```/g, '').trim();
             insightJson = JSON.parse(clearJson);
         } catch (err) {
-            console.error('Coach JSON Parse Error:', err);
+            logger.error('Coach JSON Parse Error:', err);
             return NextResponse.json({ error: 'Falha ao processar análise da IA.' }, { status: 500 });
         }
 
@@ -155,7 +151,7 @@ ${context}`;
 
         return NextResponse.json(insightJson);
     } catch (error) {
-        console.error('Coach API error:', error);
+        logger.error('Coach API error:', error);
         return NextResponse.json({ error: 'Erro interno do Treinador IA.' }, { status: 500 });
     }
 }

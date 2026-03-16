@@ -145,6 +145,10 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'Meta não encontrada.' }, { status: 404 });
         }
 
+        if (current > existingGoal.target) {
+            return NextResponse.json({ error: 'Valor atual não pode exceder o valor alvo da meta.' }, { status: 400 });
+        }
+
         const goal = await prisma.goal.update({
             where: { id },
             data: { current },

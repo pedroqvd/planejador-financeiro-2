@@ -51,9 +51,9 @@ function ResetForm() {
 
     if (!token) {
         return (
-            <div className="p-6 border border-zinc-200 bg-zinc-50 text-center">
-                <p className="text-sm text-zinc-600">Token de recuperação não encontrado.</p>
-                <Link href="/forgot-password" className="text-xs text-zinc-900 underline mt-2 inline-block">
+            <div className="p-6 text-center" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Token de recuperação não encontrado.</p>
+                <Link href="/forgot-password" className="text-xs underline mt-2 inline-block" style={{ color: 'var(--accent-ink)' }}>
                     Solicitar novo link
                 </Link>
             </div>
@@ -61,26 +61,27 @@ function ResetForm() {
     }
 
     return (
-        <div className="bg-white border border-zinc-200 p-8">
+        <div className="p-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 border border-zinc-200 flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-zinc-600" />
+                <div className="w-10 h-10 flex items-center justify-center" style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                    <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                    <h1 className="text-lg font-editorial font-bold text-zinc-900">Nova Senha</h1>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Defina sua nova senha</p>
+                    <h1 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>Nova Senha</h1>
+                    <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Defina sua nova senha</p>
                 </div>
             </div>
 
             {success ? (
                 <div className="space-y-4">
-                    <div className="flex items-center space-x-3 p-4 border border-zinc-200 bg-zinc-50">
-                        <Check className="w-5 h-5 text-zinc-700 flex-shrink-0" />
-                        <p className="text-sm text-zinc-700">Senha alterada com sucesso!</p>
+                    <div className="flex items-center space-x-3 p-4" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)' }}>
+                        <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#10b981' }} />
+                        <p className="text-sm" style={{ color: 'var(--text-primary)' }}>Senha alterada com sucesso!</p>
                     </div>
                     <Link
                         href="/login"
-                        className="block text-center w-full py-3 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all"
+                        className="block text-center w-full py-3 text-xs font-medium uppercase tracking-wider transition-all hover:opacity-90"
+                        style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
                     >
                         Ir para Login
                     </Link>
@@ -88,32 +89,34 @@ function ResetForm() {
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Nova Senha</label>
+                        <label className="block text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Nova Senha</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition-all bg-transparent"
-                            placeholder="Mínimo 6 caracteres"
-                            minLength={6}
+                            className="w-full px-4 py-2.5 border-0 border-b text-sm transition-all bg-transparent"
+                            style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                            placeholder="Mínimo 8 caracteres"
+                            minLength={8}
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Confirmar Senha</label>
+                        <label className="block text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Confirmar Senha</label>
                         <input
                             type="password"
                             value={confirm}
                             onChange={(e) => setConfirm(e.target.value)}
-                            className="w-full px-4 py-2.5 border-0 border-b border-zinc-200 rounded-none text-sm text-zinc-900 focus:outline-none focus:border-zinc-900 transition-all bg-transparent"
+                            className="w-full px-4 py-2.5 border-0 border-b text-sm transition-all bg-transparent"
+                            style={{ borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
                             placeholder="Repita a nova senha"
                             required
                         />
                     </div>
 
                     {error && (
-                        <div className="p-3 border border-zinc-200 text-sm text-zinc-700 text-center bg-zinc-50">
+                        <div className="p-3 text-sm text-center" style={{ border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)' }}>
                             {error}
                         </div>
                     )}
@@ -121,7 +124,8 @@ function ResetForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-zinc-900 text-white text-xs font-medium uppercase tracking-wider hover:bg-zinc-800 transition-all disabled:opacity-60 flex items-center justify-center"
+                        className="w-full py-3 text-xs font-medium uppercase tracking-wider transition-all disabled:opacity-60 flex items-center justify-center hover:opacity-90"
+                        style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Redefinir Senha'}
                     </button>
@@ -133,7 +137,7 @@ function ResetForm() {
 
 export default function ResetPasswordPage() {
     return (
-        <div className="min-h-screen bg-[#FCFCFA] flex items-center justify-center p-4">
+        <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--bg-cream)' }}>
             <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -143,13 +147,14 @@ export default function ResetPasswordPage() {
                 <div className="mb-8">
                     <Link
                         href="/login"
-                        className="flex items-center space-x-2 text-xs text-zinc-500 uppercase tracking-wider hover:text-zinc-900 transition-colors"
+                        className="flex items-center space-x-2 text-xs uppercase tracking-wider transition-colors hover:opacity-70"
+                        style={{ color: 'var(--text-secondary)' }}
                     >
                         <ArrowLeft className="w-3.5 h-3.5" />
                         <span>Voltar ao login</span>
                     </Link>
                 </div>
-                <Suspense fallback={<div className="h-64 animate-pulse bg-zinc-100" />}>
+                <Suspense fallback={<div className="h-64 animate-pulse" style={{ backgroundColor: 'var(--bg-input)' }} />}>
                     <ResetForm />
                 </Suspense>
             </motion.div>

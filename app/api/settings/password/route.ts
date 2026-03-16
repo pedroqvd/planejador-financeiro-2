@@ -58,7 +58,10 @@ export async function PUT(request: Request) {
 
         await prisma.user.update({
             where: { id: session.user.id },
-            data: { password: hashedPassword },
+            data: {
+                password: hashedPassword,
+                passwordChangedAt: new Date(),
+            },
         });
 
         await logAudit({
@@ -69,7 +72,8 @@ export async function PUT(request: Request) {
 
         return NextResponse.json({ message: 'Senha alterada com sucesso!' });
     } catch (error) {
-        console.error('Password change error:', error);
+        // Avoid leaking error details in production
+        console.error('[Password] Change failed');
         return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });
     }
 }

@@ -1,13 +1,14 @@
 import React from 'react';
 import { clsx } from 'clsx';
 
-export function Logo({ className }: { className?: string }) {
+export function Logo({ className, style }: { className?: string; style?: React.CSSProperties }) {
     return (
         <svg
             viewBox="0 0 40 40"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className={clsx("shrink-0", className)}
+            style={style}
         >
             <defs>
                 <linearGradient id="logo-gradient" x1="8" y1="16" x2="34" y2="28" gradientUnits="userSpaceOnUse">

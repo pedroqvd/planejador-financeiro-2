@@ -157,20 +157,23 @@ export async function POST(request: Request) {
             // Update budgets for all created months
             for (const tx of createdTxs) {
                 const currentMonth = tx.date.toISOString().slice(0, 7);
-                const categoryBudget = await prisma.budget.findFirst({
-                    where: { userId: session.user.id, category: tx.category, month: currentMonth }
-                });
 
-                await prisma.budget.updateMany({
-                    where: {
-                        userId: session.user.id,
-                        category: tx.category,
-                        month: currentMonth,
-                    },
-                    data: {
-                        spent: { increment: tx.amount },
-                    },
-                });
+                // Find budget and update in one query batch
+                const [categoryBudget] = await Promise.all([
+                    prisma.budget.findFirst({
+                        where: { userId: session.user.id, category: tx.category, month: currentMonth }
+                    }),
+                    prisma.budget.updateMany({
+                        where: {
+                            userId: session.user.id,
+                            category: tx.category,
+                            month: currentMonth,
+                        },
+                        data: {
+                            spent: { increment: tx.amount },
+                        },
+                    }),
+                ]);
 
                 // Rule 1: Budget Exceeded Notification
                 if (categoryBudget && (categoryBudget.spent + tx.amount) > categoryBudget.limit && categoryBudget.spent <= categoryBudget.limit) {

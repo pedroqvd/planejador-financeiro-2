@@ -44,7 +44,8 @@ export async function getExchangeRates(): Promise<ExchangeRates> {
                 const cachedRates = typeof cachedStr === 'string' ? JSON.parse(cachedStr) : cachedStr;
                 return cachedRates as ExchangeRates;
             } catch (e) {
-                console.error('Failed to parse cached rates', e);
+                console.error('Failed to parse cached rates, invalidating cache', e);
+                await redis.del(CACHE_KEY).catch(() => {});
             }
         }
 
