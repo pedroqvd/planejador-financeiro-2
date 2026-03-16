@@ -212,7 +212,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
             className="p-2 text-zinc-500 hover:text-zinc-900 relative transition-colors duration-200 hover:bg-zinc-100 rounded-full"
           >
             {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2" style={{ backgroundColor: 'var(--accent-ink)', ringColor: 'var(--bg-card)' }} />
+              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--accent-ink)', boxShadow: '0 0 0 2px var(--bg-card)' }} />
             )}
             <Bell className="w-[18px] h-[18px]" />
           </button>
