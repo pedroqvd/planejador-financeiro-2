@@ -12,6 +12,8 @@ import { CashFlowForecast } from '@/components/CashFlowForecast';
 import { BudgetProgress } from '@/components/BudgetProgress';
 import { AddTransactionModal } from '@/components/AddTransactionModal';
 import { SmartBudgetModal } from '@/components/SmartBudgetModal';
+import { SpendingByCategory } from '@/components/SpendingByCategory';
+import { SavingsStreak } from '@/components/SavingsStreak';
 import {
   Plus,
   Upload,
@@ -322,6 +324,20 @@ export default function Dashboard() {
               budgets={dashboard?.budgets || []}
               preferredCurrency={dashboard?.preferredCurrency}
             />
+
+            {hasData && (
+              <SpendingByCategory
+                transactions={dashboard?.recentTransactions || []}
+                preferredCurrency={dashboard?.preferredCurrency}
+              />
+            )}
+
+            {hasData && dashboard?.stats && (
+              <SavingsStreak
+                stats={dashboard.stats}
+                chartData={(dashboard as any)?.chartData}
+              />
+            )}
 
             {/* Quick Navigation */}
             <motion.div

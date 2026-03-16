@@ -26,6 +26,19 @@ type Transaction = {
   date: string;
 };
 
+function relativeDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Hoje';
+  if (diffDays === 1) return 'Ontem';
+  if (diffDays <= 6) return `${diffDays} dias atras`;
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
+
 const categoryIcons: Record<string, { icon: React.ComponentType<{ className?: string }> }> = {
   'Alimentação': { icon: ShoppingCart },
   'Transporte': { icon: Car },
@@ -265,7 +278,7 @@ export function Transactions({
                       <div className="flex items-center space-x-2 text-[11px] mt-0.5 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                         <span>{transaction.category}</span>
                         <span className="w-[3px] h-[3px] rounded-full" style={{ backgroundColor: 'var(--border-color)' }} />
-                        <span>{new Date(transaction.date).toLocaleDateString('pt-BR')}</span>
+                        <span>{relativeDate(transaction.date)}</span>
                       </div>
                     </div>
                   </div>
