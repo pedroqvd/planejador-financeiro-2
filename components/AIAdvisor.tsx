@@ -77,60 +77,50 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
       if (!audioBlob) setInput('');
       setLoading(true);
 
-      try {
+      const makeRequest = async (): Promise<Response> => {
         const formData = new FormData();
         if (msg) formData.append('message', msg);
         if (audioBlob) formData.append('audio', audioBlob, 'record.webm');
 
-        // Send conversation history for context (last 6 messages)
         const history = messages
           .filter(m => m.id !== 'welcome')
           .slice(-6)
           .map(m => ({ role: m.role, content: m.content }));
         formData.append('history', JSON.stringify(history));
 
-        const res = await fetch('/api/ai', {
-          method: 'POST',
-          body: formData,
-        });
+        return fetch('/api/ai', { method: 'POST', body: formData });
+      };
+
+      try {
+        let res = await makeRequest();
+
+        // Retry once with 3s backoff on transient 429
+        if (res.status === 429) {
+          await new Promise(r => setTimeout(r, 3000));
+          res = await makeRequest();
+        }
 
         const data = await res.json();
 
         if (res.ok) {
           setMessages(prev => [
             ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: data.reply,
-            },
+            { id: (Date.now() + 1).toString(), role: 'assistant', content: data.reply },
           ]);
         } else if (res.status === 429) {
           setMessages(prev => [
             ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: 'Estou com muitas consultas no momento. Aguarde **1 minuto** e tente novamente.',
-            },
+            { id: (Date.now() + 1).toString(), role: 'assistant', content: 'A IA está processando outras consultas. Tente novamente em alguns segundos.' },
           ]);
         } else if (res.status === 403) {
           setMessages(prev => [
             ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: data.error || 'Você atingiu o limite diário de consultas. Faça **upgrade** para continuar!',
-            },
+            { id: (Date.now() + 1).toString(), role: 'assistant', content: data.error || 'Você atingiu o limite diário de consultas. Faça **upgrade** para continuar!' },
           ]);
         } else {
           setMessages(prev => [
             ...prev,
-            {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: 'Desculpe, tive um problema ao processar sua mensagem. Tente novamente em instantes.',
-            },
+            { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Não consegui processar agora. Tente novamente em instantes.' },
           ]);
         }
       } catch {

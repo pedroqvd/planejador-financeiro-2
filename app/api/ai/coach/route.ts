@@ -11,7 +11,7 @@ import { logger } from '@/lib/logger';
 // Simple in-memory cache to avoid burning Gemini quota on every page load
 // Key: userId, Value: { data, timestamp }
 const insightCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 export async function GET() {
     const session = await auth();

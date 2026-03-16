@@ -74,11 +74,30 @@ export default function Dashboard() {
   };
 
   const fetchAiInsight = async () => {
+    // Client-side cache: avoid hitting server on every navigation/refresh
+    const CACHE_KEY = 'wc:ai-coach';
+    const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, ts } = JSON.parse(cached);
+        if (Date.now() - ts < CACHE_TTL && data && !data.error) {
+          setAiInsight(data);
+          return;
+        }
+      }
+    } catch { /* ignore parse errors */ }
+
     try {
       const aiRes = await fetch('/api/ai/coach');
       if (aiRes.ok) {
         const data = await aiRes.json();
-        if (!data.error) setAiInsight(data);
+        if (!data.error) {
+          setAiInsight(data);
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+          } catch { /* storage full */ }
+        }
       }
     } catch (error) {
       console.error('Error fetching AI insight:', error);
