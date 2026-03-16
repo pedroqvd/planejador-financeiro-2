@@ -13,7 +13,8 @@ model User {
   email                String        @unique
   password             String
   image                String?
-  plan                 String        @default("free") // free, pro, premium
+  plan                 String        @default("free") // free, paid
+  billingCycle         String?       // monthly, semiannual, annual (null = free)
   aiInteractionsCount  Int           @default(0)
   aiLastInteractionAt  DateTime      @default(now())
   mercadoPagoId             String?       @unique
@@ -39,6 +40,7 @@ model User {
   pluggyItems          PluggyItem[]
   recurrences          Recurrence[]
   auditLogs            AuditLog[]
+  aiConversations      AIConversation[]
 
   @@index([email])
 }
@@ -182,6 +184,30 @@ model Recurrence {
 
   @@index([userId])
   @@index([userId, active])
+}
+
+model AIConversation {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String      @default("Nova conversa")
+  messages  AIMessage[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model AIMessage {
+  id             String         @id @default(cuid())
+  conversationId String
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String         // 'user' | 'assistant'
+  content        String
+  metadata       String?        // JSON: pending transaction data, etc.
+  createdAt      DateTime       @default(now())
+
+  @@index([conversationId])
 }
 
 model WebhookEvent {

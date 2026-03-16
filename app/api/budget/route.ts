@@ -47,9 +47,7 @@ export async function POST(request: Request) {
     } catch { /* dev fallback */ }
 
     try {
-        // Plan gating: limit budgets for free users
-        const userPlan = session.user.plan || 'free';
-        const planLimits = getPlanLimits(userPlan);
+        const planLimits = getPlanLimits(session.user.plan || 'free');
 
         let body;
         try { body = await request.json(); }

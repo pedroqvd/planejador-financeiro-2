@@ -459,34 +459,25 @@ export default function LandingPage() {
                         <p className="mt-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Comece grátis, faça upgrade quando precisar.</p>
                     </motion.div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
                         {[
                             {
-                                name: 'Free',
+                                name: 'Gratuito',
                                 price: 'R$ 0',
                                 period: 'para sempre',
-                                desc: 'Para começar a organizar',
-                                features: ['50 transações/mês', 'Dashboard completo', '3 metas financeiras', '1 orçamento'],
-                                cta: 'Começar Grátis',
+                                desc: 'Para comecar a organizar',
+                                features: ['100 transacoes/mes', 'Dashboard completo', '3 metas financeiras', '2 orcamentos', '15 consultas IA/dia'],
+                                cta: 'Comecar Gratis',
                                 highlight: false,
                             },
                             {
-                                name: 'Pro',
-                                price: 'R$ 14,90',
-                                period: '/mês',
-                                desc: 'Para quem leva a sério',
-                                features: ['Transações ilimitadas', 'IA Advisor ilimitado', 'Importação OFX/CSV', 'Relatórios PDF', 'Metas ilimitadas', 'Suporte por email'],
-                                cta: 'Assinar Pro',
+                                name: 'WealthCash',
+                                price: 'R$ 19,90',
+                                period: '/mes',
+                                desc: 'Tudo ilimitado + IA completa',
+                                features: ['Transacoes ilimitadas', 'IA Advisor completo', 'Importacao OFX/CSV/PDF', 'OCR de recibos', 'Open Finance', 'Notificacoes inteligentes', 'Suporte prioritario'],
+                                cta: 'Assinar Agora',
                                 highlight: true,
-                            },
-                            {
-                                name: 'Premium',
-                                price: 'R$ 29,90',
-                                period: '/mês',
-                                desc: 'Para controle total',
-                                features: ['Tudo do Pro', 'Conexão bancária automática', 'Alertas inteligentes', 'Relatórios avançados', 'API access', 'Suporte prioritário'],
-                                cta: 'Assinar Premium',
-                                highlight: false,
                             },
                         ].map((plan, i) => (
                             <motion.div
@@ -502,7 +493,7 @@ export default function LandingPage() {
                             >
                                 {plan.highlight && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest px-4 py-1 rounded-full" style={{ backgroundColor: 'var(--accent-gold)', color: '#1a1a1a' }}>
-                                        Mais Popular
+                                        A partir de
                                     </div>
                                 )}
                                 <h3 className="text-lg font-editorial font-bold">{plan.name}</h3>

@@ -1,14 +1,23 @@
 'use client';
 
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { Send, Loader2, Bot, User, Mic, Square, X, MessageSquare, Sparkles } from 'lucide-react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { Send, Loader2, Bot, User, Mic, Square, X, MessageSquare, Sparkles, Check, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import toast from 'react-hot-toast';
+
+type PendingTransaction = {
+  name: string;
+  category: string;
+  amount: number;
+  type: string;
+};
 
 type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  pendingTransaction?: PendingTransaction | null;
+  messageDbId?: string; // DB id for confirmation
 };
 
 export type AIAdvisorHandle = {
@@ -36,6 +45,9 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [showChips, setShowChips] = useState(true);
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [streamingContent, setStreamingContent] = useState('');
+    const [historyLoaded, setHistoryLoaded] = useState(false);
 
     // Audio recording state
     const [isRecording, setIsRecording] = useState(false);
@@ -47,9 +59,33 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const processedChips = useRef<Set<string>>(new Set());
 
+    // Load conversation history from DB on first open
+    useEffect(() => {
+      if (isOpen && !historyLoaded) {
+        setHistoryLoaded(true);
+        fetch('/api/ai/conversations')
+          .then(res => res.json())
+          .then(data => {
+            if (data.conversation?.messages?.length > 0) {
+              setConversationId(data.conversation.id);
+              const dbMessages: Message[] = data.conversation.messages.map((m: any) => ({
+                id: m.id,
+                role: m.role as 'user' | 'assistant',
+                content: m.content,
+                messageDbId: m.id,
+                pendingTransaction: m.metadata ? JSON.parse(m.metadata)?.pendingTransaction : null,
+              }));
+              setMessages(prev => [prev[0], ...dbMessages]); // Keep welcome + add history
+              setShowChips(false);
+            }
+          })
+          .catch(() => { /* ignore */ });
+      }
+    }, [isOpen, historyLoaded]);
+
     useEffect(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isOpen]);
+    }, [messages, isOpen, streamingContent]);
 
     useEffect(() => {
       if (isRecording) {
@@ -76,62 +112,139 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
       setMessages(prev => [...prev, userMessage]);
       if (!audioBlob) setInput('');
       setLoading(true);
+      setStreamingContent('');
 
-      const makeRequest = async (): Promise<Response> => {
+      try {
         const formData = new FormData();
         if (msg) formData.append('message', msg);
         if (audioBlob) formData.append('audio', audioBlob, 'record.webm');
+        if (conversationId) formData.append('conversationId', conversationId);
 
-        const history = messages
-          .filter(m => m.id !== 'welcome')
-          .slice(-6)
-          .map(m => ({ role: m.role, content: m.content }));
-        formData.append('history', JSON.stringify(history));
+        const res = await fetch('/api/ai', { method: 'POST', body: formData });
 
-        return fetch('/api/ai', { method: 'POST', body: formData });
-      };
-
-      try {
-        let res = await makeRequest();
-
-        // Retry once with 3s backoff on transient 429
-        if (res.status === 429) {
-          await new Promise(r => setTimeout(r, 3000));
-          res = await makeRequest();
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: res.status === 429
+                ? 'A IA está processando outras consultas. Tente novamente em alguns segundos.'
+                : res.status === 403
+                  ? (data.error || 'Você atingiu o limite diário. Faça **upgrade** para continuar!')
+                  : 'Não consegui processar agora. Tente novamente.',
+            },
+          ]);
+          setLoading(false);
+          return;
         }
 
-        const data = await res.json();
+        // SSE streaming
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error('No reader');
 
-        if (res.ok) {
-          setMessages(prev => [
-            ...prev,
-            { id: (Date.now() + 1).toString(), role: 'assistant', content: data.reply },
-          ]);
-        } else if (res.status === 429) {
-          setMessages(prev => [
-            ...prev,
-            { id: (Date.now() + 1).toString(), role: 'assistant', content: 'A IA está processando outras consultas. Tente novamente em alguns segundos.' },
-          ]);
-        } else if (res.status === 403) {
-          setMessages(prev => [
-            ...prev,
-            { id: (Date.now() + 1).toString(), role: 'assistant', content: data.error || 'Você atingiu o limite diário de consultas. Faça **upgrade** para continuar!' },
-          ]);
-        } else {
-          setMessages(prev => [
-            ...prev,
-            { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Não consegui processar agora. Tente novamente em instantes.' },
-          ]);
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullContent = '';
+        let finalData: any = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'chunk') {
+                fullContent += data.content;
+                setStreamingContent(fullContent);
+              } else if (data.type === 'done') {
+                finalData = data;
+              } else if (data.type === 'error') {
+                fullContent = data.error;
+              }
+            } catch { /* skip malformed */ }
+          }
         }
-      } catch {
+
+        setStreamingContent('');
+
+        // Find the last assistant message from DB to get its ID for confirmation
+        let messageDbId: string | undefined;
+        if (finalData?.conversationId) {
+          setConversationId(finalData.conversationId);
+          // Fetch the last message ID
+          try {
+            const convRes = await fetch('/api/ai/conversations');
+            const convData = await convRes.json();
+            if (convData.conversation?.messages?.length > 0) {
+              const lastMsg = convData.conversation.messages[convData.conversation.messages.length - 1];
+              if (lastMsg.role === 'assistant') {
+                messageDbId = lastMsg.id;
+              }
+            }
+          } catch { /* ignore */ }
+        }
+
         setMessages(prev => [
           ...prev,
-          { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexão. Verifique sua internet e tente novamente.' },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: fullContent || 'Desculpe, não consegui processar.',
+            pendingTransaction: finalData?.pendingTransaction || null,
+            messageDbId,
+          },
+        ]);
+      } catch {
+        setStreamingContent('');
+        setMessages(prev => [
+          ...prev,
+          { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexão. Verifique sua internet.' },
         ]);
       } finally {
         setLoading(false);
       }
     };
+
+    const confirmTransaction = useCallback(async (msgId: string, messageDbId?: string) => {
+      if (!messageDbId) return;
+
+      try {
+        const res = await fetch('/api/ai/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId: messageDbId }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          toast.success(data.message || 'Transação registrada!');
+          setMessages(prev => prev.map(m =>
+            m.id === msgId ? { ...m, pendingTransaction: null, content: m.content + '\n\n✅ **Transação registrada com sucesso!**' } : m
+          ));
+          // Dispatch event to refresh dashboard
+          window.dispatchEvent(new Event('sync-complete'));
+        } else {
+          toast.error(data.error || 'Erro ao confirmar');
+        }
+      } catch {
+        toast.error('Erro de conexão');
+      }
+    }, []);
+
+    const rejectTransaction = useCallback((msgId: string) => {
+      setMessages(prev => prev.map(m =>
+        m.id === msgId ? { ...m, pendingTransaction: null, content: m.content + '\n\n❌ Transação cancelada.' } : m
+      ));
+    }, []);
 
     const startRecording = async () => {
       try {
@@ -258,21 +371,61 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
                       >
                         {msg.role === 'assistant' ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                       </div>
-                      <div
-                        className="max-w-[80%] px-3.5 py-2.5 text-sm leading-relaxed"
-                        style={msg.role === 'assistant'
-                          ? { backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }
-                          : { backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }
-                        }
-                      >
-                        {renderMessage(msg.content)}
+                      <div className="max-w-[80%]">
+                        <div
+                          className="px-3.5 py-2.5 text-sm leading-relaxed"
+                          style={msg.role === 'assistant'
+                            ? { backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }
+                            : { backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }
+                          }
+                        >
+                          {renderMessage(msg.content)}
+                        </div>
+
+                        {/* Transaction confirmation buttons */}
+                        {msg.pendingTransaction && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => confirmTransaction(msg.id, msg.messageDbId)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80"
+                              style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
+                            >
+                              <Check className="w-3 h-3" /> Confirmar
+                            </button>
+                            <button
+                              onClick={() => rejectTransaction(msg.id)}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-all hover:opacity-80"
+                              style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+                            >
+                              <XCircle className="w-3 h-3" /> Cancelar
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
 
+                {/* Streaming content */}
+                {streamingContent && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start space-x-2.5">
+                    <div
+                      className="w-7 h-7 flex items-center justify-center flex-shrink-0"
+                      style={{ border: '1px solid var(--border-color)', color: 'var(--accent-ink)' }}
+                    >
+                      <Bot className="w-3.5 h-3.5" />
+                    </div>
+                    <div
+                      className="max-w-[80%] px-3.5 py-2.5 text-sm leading-relaxed"
+                      style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                    >
+                      {renderMessage(streamingContent)}
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Typing indicator */}
-                {loading && (
+                {loading && !streamingContent && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start space-x-2.5">
                     <div
                       className="w-7 h-7 flex items-center justify-center flex-shrink-0"

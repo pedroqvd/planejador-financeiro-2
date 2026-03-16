@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         const usersWithPush = await prisma.user.findMany({
             where: {
                 fcmToken: { not: null },
-                plan: { not: 'free' } // Keep premium feature walled
+                plan: { not: 'free' } // Only paid users
             },
             select: {
                 id: true,

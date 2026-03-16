@@ -276,7 +276,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
           <div className="flex flex-col text-right hidden sm:flex">
             <span className="text-sm font-editorial font-bold text-zinc-900 dark:text-zinc-100">{userName}</span>
             <div className="flex justify-end mt-0.5">
-              {plan === 'premium' ? (
+              {plan !== 'free' ? (
                 <span className="relative inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 shadow-sm overflow-hidden group/badge">
                   <motion.div
                     animate={{ x: ['-100%', '200%'] }}
@@ -284,17 +284,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                     className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent -skew-x-12"
                   />
                   <Star className="w-2 h-2 mr-1 fill-current relative z-10" />
-                  <span className="relative z-10">Premium</span>
-                </span>
-              ) : plan === 'pro' ? (
-                <span className="relative inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 overflow-hidden">
-                  <motion.div
-                    animate={{ x: ['-100%', '200%'] }}
-                    transition={{ repeat: Infinity, duration: 2.5, ease: 'linear', repeatDelay: 1.5 }}
-                    className="absolute inset-y-0 w-8 bg-gradient-to-r from-transparent via-white/30 dark:via-white/5 to-transparent -skew-x-12"
-                  />
-                  <Sparkles className="w-2 h-2 mr-1 fill-current relative z-10" />
-                  <span className="relative z-10">Pro</span>
+                  <span className="relative z-10">Assinante</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">
@@ -306,8 +296,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
 
           <div className={clsx(
             "relative p-0.5 rounded-full",
-            plan === 'premium' ? "bg-gradient-to-tr from-amber-400 to-amber-200 shadow-sm" :
-              plan === 'pro' ? "bg-gradient-to-tr from-indigo-400 to-indigo-200 shadow-sm" :
+            plan !== 'free' ? "bg-gradient-to-tr from-amber-400 to-amber-200 shadow-sm" :
                 "bg-zinc-200 dark:bg-zinc-700"
           )}>
             <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white dark:border-zinc-900 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center">

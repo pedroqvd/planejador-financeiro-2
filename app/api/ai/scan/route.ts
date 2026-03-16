@@ -9,9 +9,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const userPlan = session.user.plan || 'free';
-    if (userPlan === 'free') {
-        return NextResponse.json({ error: 'OCR de recibos disponível apenas para planos Pro/Premium.' }, { status: 403 });
+    const { isPaidPlan } = await import('@/lib/plans');
+    if (!isPaidPlan(session.user.plan || 'free')) {
+        return NextResponse.json({ error: 'OCR de recibos disponível no plano pago. Faça upgrade!' }, { status: 403 });
     }
 
     // SECURITY: Rate limiting per user

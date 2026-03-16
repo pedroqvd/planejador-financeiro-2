@@ -49,9 +49,7 @@ export async function POST(request: Request) {
     } catch { /* dev fallback */ }
 
     try {
-        // Plan gating
-        const userPlan = session.user.plan || 'free';
-        const planLimits = getPlanLimits(userPlan);
+        const planLimits = getPlanLimits(session.user.plan || 'free');
 
         const goalCount = await prisma.goal.count({ where: { userId: session.user.id } });
 

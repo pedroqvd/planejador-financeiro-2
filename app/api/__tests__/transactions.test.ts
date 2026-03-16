@@ -93,7 +93,7 @@ describe('POST /api/transactions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (auth as ReturnType<typeof vi.fn>).mockResolvedValue({
-            user: { id: 'user-1', plan: 'pro' },
+            user: { id: 'user-1', plan: 'paid' },
         });
     });
 

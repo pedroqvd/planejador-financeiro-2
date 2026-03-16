@@ -12,10 +12,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const userPlan = session.user.plan || 'free';
-    if (userPlan === 'free') {
+    const { isPaidPlan } = await import('@/lib/plans');
+    if (!isPaidPlan(session.user.plan || 'free')) {
         return NextResponse.json(
-            { error: 'Importação automática é exclusiva do plano Pro. Faça upgrade!' },
+            { error: 'Importação automática disponível no plano pago. Faça upgrade!' },
             { status: 403 }
         );
     }

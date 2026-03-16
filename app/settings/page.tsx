@@ -280,13 +280,13 @@ export default function SettingsPage() {
 
 
 
-    const handleUpgrade = async (plan: string) => {
-        setPlanLoading(plan);
+    const handleUpgrade = async (billingCycle: string) => {
+        setPlanLoading(billingCycle);
         try {
             const res = await fetch('/api/checkout/mercado-pago', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ planId: plan })
+                body: JSON.stringify({ billingCycle })
             });
             const data = await res.json();
             if (res.ok && data.url) {
@@ -308,7 +308,8 @@ export default function SettingsPage() {
     };
 
     const userPlan = (session?.user as { plan?: string })?.plan || 'free';
-    const planNames: Record<string, string> = { free: 'Free', pro: 'Pro', premium: 'Premium' };
+    const isPaid = userPlan !== 'free';
+    const planNames: Record<string, string> = { free: 'Gratuito', paid: 'Assinante', pro: 'Assinante', premium: 'Assinante' };
 
     return (
         <DashboardLayout>
@@ -344,23 +345,15 @@ export default function SettingsPage() {
                         </span>
                     </div>
 
-                    {userPlan === 'free' ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    {!isPaid ? (
+                        <div className="mt-4">
                             <button
-                                onClick={() => handleUpgrade('pro')}
+                                onClick={() => handleUpgrade('monthly')}
                                 disabled={!!planLoading}
-                                className="flex items-center justify-center space-x-2 px-4 py-3 bg-white text-zinc-900 text-xs font-bold uppercase tracking-wider hover:bg-zinc-100 transition-all disabled:opacity-50"
+                                className="flex items-center justify-center space-x-2 w-full px-4 py-3 bg-white text-zinc-900 text-xs font-bold uppercase tracking-wider hover:bg-zinc-100 transition-all disabled:opacity-50"
                             >
-                                {planLoading === 'pro' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                <span>Upgrade Pro — R$ 14,90/mês</span>
-                            </button>
-                            <button
-                                onClick={() => handleUpgrade('premium')}
-                                disabled={!!planLoading}
-                                className="flex items-center justify-center space-x-2 px-4 py-3 border border-zinc-700 text-white text-xs font-bold uppercase tracking-wider hover:bg-zinc-800 transition-all disabled:opacity-50"
-                            >
-                                {planLoading === 'premium' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
-                                <span>Premium — R$ 29,90/mês</span>
+                                {planLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                <span>Assinar WealthCash — A partir de R$ 19,90/mês</span>
                             </button>
                         </div>
                     ) : (

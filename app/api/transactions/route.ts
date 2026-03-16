@@ -54,9 +54,7 @@ export async function POST(request: Request) {
     } catch { /* dev fallback */ }
 
     try {
-        // Plan gating: check transaction count for free users
-        const userPlan = session.user.plan || 'free';
-        const planLimits = getPlanLimits(userPlan);
+        const planLimits = getPlanLimits(session.user.plan || 'free');
 
         if (planLimits.transactionsPerMonth !== Infinity) {
             const startOfMonth = new Date();

@@ -95,29 +95,28 @@ export async function POST(req: Request) {
             const subscription = await preApproval.get({ id: subscriptionId });
 
             if (subscription && subscription.status === 'authorized') {
-                const userId = subscription.external_reference; // This is the user.id we passed in checkout
-                const reason = subscription.reason || ''; // E.g., "WealthCash PRO"
-
-                let plan = 'free';
-                if (reason.toUpperCase().includes('PRO')) plan = 'pro';
-                if (reason.toUpperCase().includes('PREMIUM')) plan = 'premium';
+                // external_reference format: "userId:billingCycle" or legacy "userId"
+                const ref = subscription.external_reference || '';
+                const [userId, billingCycle] = ref.includes(':') ? ref.split(':') : [ref, 'monthly'];
 
                 if (userId) {
                     await prisma.user.update({
                         where: { id: userId },
                         data: {
-                            plan: plan,
+                            plan: 'paid',
+                            billingCycle: billingCycle || 'monthly',
                             mercadoPagoSubscriptionId: subscriptionId,
                         }
                     });
-                    console.log(`[MercadoPago Webhook] User ${userId} upgraded to ${plan.toUpperCase()}`);
+                    console.log(`[MercadoPago Webhook] User ${userId} upgraded to PAID (${billingCycle})`);
                 }
             } else if (subscription && ['cancelled', 'paused', 'suspended'].includes(subscription.status || '')) {
-                const userId = subscription.external_reference;
+                const ref = subscription.external_reference || '';
+                const [userId] = ref.includes(':') ? ref.split(':') : [ref];
                 if (userId) {
                     await prisma.user.update({
                         where: { id: userId },
-                        data: { plan: 'free' }
+                        data: { plan: 'free', billingCycle: null }
                     });
                     console.log(`[MercadoPago Webhook] User ${userId} subscription ${subscription.status}, downgraded to FREE`);
                 }
