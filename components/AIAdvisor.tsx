@@ -120,7 +120,7 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
             {
               id: (Date.now() + 1).toString(),
               role: 'assistant',
-              content: data.error || 'Voce atingiu o limite diario de consultas. Faca **upgrade** para continuar!',
+              content: data.error || 'Você atingiu o limite diário de consultas. Faça **upgrade** para continuar!',
             },
           ]);
         } else {
@@ -136,7 +136,7 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
       } catch {
         setMessages(prev => [
           ...prev,
-          { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexao. Verifique sua internet e tente novamente.' },
+          { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexão. Verifique sua internet e tente novamente.' },
         ]);
       } finally {
         setLoading(false);

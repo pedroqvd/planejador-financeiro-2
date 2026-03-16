@@ -262,7 +262,7 @@ export default function Dashboard() {
                   Comece aqui
                 </h2>
                 <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Adicione sua primeira transacao, importe um extrato ou escaneie um recibo. Quanto mais dados, mais inteligente fica a IA.
+                  Adicione sua primeira transação, importe um extrato ou escaneie um recibo. Quanto mais dados, mais inteligente fica a IA.
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   <button
@@ -271,7 +271,7 @@ export default function Dashboard() {
                     style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }}
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    Nova Transacao
+                    Nova Transação
                   </button>
                   <button
                     onClick={() => setShowImportModal(true)}
@@ -348,11 +348,11 @@ export default function Dashboard() {
             >
               <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: 'var(--accent-gold)', opacity: 0.3 }} />
               <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
-                Acesso rapido
+                Acesso rápido
               </p>
               <div className="space-y-1">
                 {[
-                  { label: 'Relatorios', href: '/relatorios', color: '#0ea5e9' },
+                  { label: 'Relatórios', href: '/relatorios', color: '#0ea5e9' },
                   { label: 'Objetivos', href: '/goals', color: '#8b5cf6' },
                   { label: 'Investimentos', href: '/investments', color: '#10b981' },
                   { label: 'Assinaturas', href: '/recorrencias', color: '#f59e0b' },
@@ -389,7 +389,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" style={{ color: 'var(--accent-ink)' }} />
                 <span className="text-sm font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
-                  Projecao de Fluxo de Caixa
+                  Projeção de Fluxo de Caixa
                 </span>
                 <span
                   className="px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest rounded-full"

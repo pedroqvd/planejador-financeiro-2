@@ -36,19 +36,19 @@ export function SavingsStreak({ stats, chartData }: { stats: Stats; chartData?: 
   let accent: string;
 
   if (streak >= 6) {
-    message = 'Incrivel! Voce economiza ha 6+ meses seguidos';
+    message = 'Incrível! Você economiza há 6+ meses seguidos';
     icon = Trophy;
     accent = '#f59e0b';
   } else if (streak >= 3) {
-    message = `${streak} meses economizando! Continue assim`;
+    message = `${streak} meses economizando! Continue assim!`;
     icon = Flame;
     accent = '#f97316';
   } else if (isSaving) {
-    message = 'Voce esta economizando este mes. Otimo!';
+    message = 'Você está economizando este mês. Ótimo!';
     icon = TrendingUp;
     accent = '#10b981';
   } else {
-    message = 'Despesas acima da receita este mes';
+    message = 'Despesas acima da receita este mês';
     icon = Target;
     accent = '#f43f5e';
   }

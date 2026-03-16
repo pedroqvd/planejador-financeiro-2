@@ -24,7 +24,7 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
             >
                 <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: '#f59e0b', opacity: 0.4 }} />
                 <h2 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
-                    Orcamentos
+                    Orçamentos
                 </h2>
                 <p className="text-[10px] uppercase tracking-[0.15em] mt-1 mb-6" style={{ color: 'var(--text-secondary)' }}>
                     Controle mensal
@@ -38,7 +38,7 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
                     </div>
                     <div className="text-center">
                         <p className="text-sm font-editorial font-semibold" style={{ color: 'var(--text-primary)' }}>
-                            Nenhum orcamento
+                            Nenhum orçamento
                         </p>
                         <p className="text-xs mt-1 max-w-[220px]" style={{ color: 'var(--text-secondary)' }}>
                             Configure limites para acompanhar seus gastos mensais.
@@ -82,10 +82,10 @@ export function BudgetProgress({ budgets, preferredCurrency = 'BRL' }: { budgets
             <div className="flex items-start justify-between mb-5">
                 <div>
                     <h2 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
-                        Orcamentos
+                        Orçamentos
                     </h2>
                     <p className="text-[10px] uppercase tracking-[0.15em] mt-1" style={{ color: 'var(--text-secondary)' }}>
-                        {overallPercent}% utilizado este mes
+                        {overallPercent}% utilizado este mês
                     </p>
                 </div>
                 {overBudgetCount > 0 && (

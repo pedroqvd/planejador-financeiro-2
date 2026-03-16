@@ -59,7 +59,7 @@ function ScoreIndicator({ score, grade }: { score: number; grade: { label: strin
         </div>
       </div>
       <div>
-        <p className="text-[10px] uppercase tracking-[0.15em] font-semibold" style={{ color: 'var(--text-secondary)' }}>Saude</p>
+        <p className="text-[10px] uppercase tracking-[0.15em] font-semibold" style={{ color: 'var(--text-secondary)' }}>Saúde</p>
         <p className="text-xs font-semibold" style={{ color: grade.strokeColor }}>{grade.status}</p>
       </div>
     </div>
@@ -93,8 +93,8 @@ export function DashboardOverview({ stats, chartData, healthScore = 750, preferr
     if (s >= 900) return { label: 'A+', strokeColor: '#10b981', status: 'Excelente' };
     if (s >= 750) return { label: 'A', strokeColor: '#10b981', status: 'Muito Bom' };
     if (s >= 600) return { label: 'B', strokeColor: '#0ea5e9', status: 'Bom' };
-    if (s >= 450) return { label: 'C', strokeColor: '#f59e0b', status: 'Atencao' };
-    return { label: 'D', strokeColor: '#f43f5e', status: 'Critico' };
+    if (s >= 450) return { label: 'C', strokeColor: '#f59e0b', status: 'Atenção' };
+    return { label: 'D', strokeColor: '#f43f5e', status: 'Crítico' };
   };
 
   const grade = getGrade(healthScore);
@@ -112,7 +112,7 @@ export function DashboardOverview({ stats, chartData, healthScore = 750, preferr
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="text-[10px] uppercase tracking-[0.2em] font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
-              Saldo do mes
+              Saldo do mês
             </p>
             <motion.p
               initial={{ opacity: 0, scale: 0.9 }}
@@ -125,7 +125,7 @@ export function DashboardOverview({ stats, chartData, healthScore = 750, preferr
             </motion.p>
             <div className="flex items-center gap-4 mt-2">
               <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Patrimonio: <strong style={{ color: 'var(--text-primary)' }}>{formatCurrency(stats.netWorth, preferredCurrency)}</strong>
+                Patrimônio: <strong style={{ color: 'var(--text-primary)' }}>{formatCurrency(stats.netWorth, preferredCurrency)}</strong>
               </span>
               {savingsRate > 0 && (
                 <span className="text-xs flex items-center gap-1" style={{ color: savingsRate >= 20 ? '#10b981' : savingsRate >= 10 ? '#f59e0b' : '#f43f5e' }}>

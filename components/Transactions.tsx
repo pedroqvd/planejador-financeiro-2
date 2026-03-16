@@ -35,7 +35,7 @@ function relativeDate(dateStr: string): string {
 
   if (diffDays === 0) return 'Hoje';
   if (diffDays === 1) return 'Ontem';
-  if (diffDays <= 6) return `${diffDays} dias atras`;
+  if (diffDays <= 6) return `${diffDays} dias atrás`;
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
@@ -221,10 +221,10 @@ export function Transactions({
               </div>
               <div className="text-center">
                 <p className="text-sm font-editorial font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {filter ? 'Nenhum resultado' : 'Nenhuma transacao'}
+                  {filter ? 'Nenhum resultado' : 'Nenhuma transação'}
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  {filter ? 'Tente outro termo de busca.' : 'Adicione sua primeira transacao para comecar.'}
+                  {filter ? 'Tente outro termo de busca.' : 'Adicione sua primeira transação para começar.'}
                 </p>
               </div>
             </motion.div>

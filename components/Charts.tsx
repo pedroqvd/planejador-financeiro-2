@@ -97,7 +97,7 @@ export function Charts({ data, loading, onSelect, preferredCurrency = 'BRL' }: {
             Receitas vs Despesas
           </h2>
           <p className="text-[11px] uppercase tracking-[0.15em] mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Ultimos 6 meses
+            Últimos 6 meses
           </p>
         </div>
 
