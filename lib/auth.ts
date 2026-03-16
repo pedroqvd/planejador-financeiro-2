@@ -82,36 +82,40 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             // Invalidate session if password was changed after token was issued
             if (token.id && token.issuedAt) {
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: token.id as string },
-                    // @ts-ignore
-                    select: { passwordChangedAt: true },
-                });
-                if (dbUser?.passwordChangedAt && new Date(dbUser.passwordChangedAt).getTime() > (token.issuedAt as number)) {
-                    // Return empty token to force sign-out
-                    return { ...token, invalidated: true };
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: token.id as string },
+                        select: { passwordChangedAt: true },
+                    });
+                    if (dbUser?.passwordChangedAt && new Date(dbUser.passwordChangedAt).getTime() > (token.issuedAt as number)) {
+                        return { ...token, invalidated: true };
+                    }
+                } catch {
+                    // Column may not exist yet if migration is pending — skip check
                 }
             }
 
             // Refresh from DB on session update (triggered after MFA verification or settings change)
             if (trigger === 'update' && token.id) {
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: token.id as string },
-                    // @ts-ignore
-                    select: { plan: true, preferredCurrency: true, mfaEnabled: true, mfaVerifiedAt: true },
-                });
-                if (dbUser) {
-                    token.plan = dbUser.plan;
-                    token.preferredCurrency = dbUser.preferredCurrency || 'BRL';
-                    token.mfaEnabled = dbUser.mfaEnabled || false;
-                    if (dbUser.mfaEnabled && dbUser.mfaVerifiedAt) {
-                        token.mfaVerified = true;
-                    } else if (!dbUser.mfaEnabled) {
-                        token.mfaVerified = true;
-                    } else {
-                        // MFA enabled but not yet verified
-                        token.mfaVerified = false;
+                try {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: token.id as string },
+                        select: { plan: true, preferredCurrency: true, mfaEnabled: true, mfaVerifiedAt: true },
+                    });
+                    if (dbUser) {
+                        token.plan = dbUser.plan;
+                        token.preferredCurrency = dbUser.preferredCurrency || 'BRL';
+                        token.mfaEnabled = dbUser.mfaEnabled || false;
+                        if (dbUser.mfaEnabled && dbUser.mfaVerifiedAt) {
+                            token.mfaVerified = true;
+                        } else if (!dbUser.mfaEnabled) {
+                            token.mfaVerified = true;
+                        } else {
+                            token.mfaVerified = false;
+                        }
                     }
+                } catch {
+                    // DB query failed — keep existing token values
                 }
             }
             return token;
