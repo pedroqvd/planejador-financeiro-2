@@ -19,14 +19,15 @@ import {
   Bot,
   X,
   Scan,
-  ArrowRight,
   Lightbulb,
+  ChevronDown,
+  ChevronUp,
   TrendingUp,
-  Wallet,
-  Target,
+  ArrowRight,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Link from 'next/link';
 
 type DashboardData = {
   stats: {
@@ -46,33 +47,6 @@ const monthNames: Record<string, number> = {
   'Jul': 6, 'Ago': 7, 'Set': 8, 'Out': 9, 'Nov': 10, 'Dez': 11
 };
 
-function QuickActionCard({ icon: Icon, label, description, onClick, accent }: {
-  icon: any; label: string; description: string; onClick: () => void; accent: string;
-}) {
-  return (
-    <motion.button
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className="card-editorial p-4 text-left group relative overflow-hidden w-full"
-    >
-      <div className="absolute top-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: accent }} />
-      <div className="flex items-start gap-3">
-        <div
-          className="w-9 h-9 flex items-center justify-center rounded-lg shrink-0"
-          style={{ backgroundColor: `${accent}12` }}
-        >
-          <Icon className="w-4 h-4" style={{ color: accent }} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
-          <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{description}</p>
-        </div>
-      </div>
-    </motion.button>
-  );
-}
-
 export default function Dashboard() {
   const { data: session } = useSession();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -83,7 +57,8 @@ export default function Dashboard() {
   const [showSmartBudgetModal, setShowSmartBudgetModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
-  const [showAiCoach, setShowAiCoach] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
+  const [dismissedInsight, setDismissedInsight] = useState(false);
 
   const fetchDashboard = async () => {
     try {
@@ -99,7 +74,10 @@ export default function Dashboard() {
   const fetchAiInsight = async () => {
     try {
       const aiRes = await fetch('/api/ai/coach');
-      if (aiRes.ok) setAiInsight(await aiRes.json());
+      if (aiRes.ok) {
+        const data = await aiRes.json();
+        if (!data.error) setAiInsight(data);
+      }
     } catch (error) {
       console.error('Error fetching AI insight:', error);
     }
@@ -108,7 +86,6 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboard();
     fetchAiInsight();
-
     window.addEventListener('sync-complete', fetchDashboard);
     return () => window.removeEventListener('sync-complete', fetchDashboard);
   }, []);
@@ -116,19 +93,11 @@ export default function Dashboard() {
   const filteredTransactions = useMemo(() => {
     if (!dashboard?.recentTransactions) return [];
     if (!selectedMonth) return dashboard.recentTransactions;
-
     return dashboard.recentTransactions.filter(tx => {
       const txDate = new Date(tx.date);
       return monthNames[selectedMonth] === txDate.getMonth();
     });
   }, [dashboard, selectedMonth]);
-
-  useEffect(() => {
-    if (aiInsight && !aiInsight.error) {
-      const timer = setTimeout(() => setShowAiCoach(true), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [aiInsight]);
 
   const firstName = session?.user?.name?.split(' ')[0] || 'usuario';
   const hasData = dashboard && (dashboard.stats.income > 0 || dashboard.stats.expenses > 0 || dashboard.recentTransactions?.length > 0);
@@ -146,21 +115,19 @@ export default function Dashboard() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Skeleton hero */}
+        <div className="max-w-6xl mx-auto space-y-4">
           <div className="animate-pulse space-y-2">
-            <div className="h-8 w-48 rounded" style={{ backgroundColor: 'var(--border-color)' }} />
-            <div className="h-4 w-64 rounded" style={{ backgroundColor: 'var(--border-color)', opacity: 0.5 }} />
+            <div className="h-4 w-40 rounded" style={{ backgroundColor: 'var(--border-color)', opacity: 0.5 }} />
+            <div className="h-8 w-56 rounded" style={{ backgroundColor: 'var(--border-color)' }} />
           </div>
           <DashboardOverview stats={null} />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 space-y-4">
-              <div className="h-80 card-editorial" />
-              <div className="h-64 card-editorial" />
+              <div className="h-72 card-editorial" />
+              <div className="h-48 card-editorial" />
             </div>
             <div className="space-y-4">
               <div className="h-64 card-editorial" />
-              <div className="h-48 card-editorial" />
             </div>
           </div>
         </div>
@@ -170,46 +137,30 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-5">
 
-        {/* Hero Header */}
+        {/* ===== HEADER: Greeting + Actions ===== */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+          transition={{ duration: 0.4 }}
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-3"
         >
           <div>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-[11px] uppercase tracking-[0.2em] font-medium mb-1"
-              style={{ color: 'var(--text-secondary)' }}
-            >
+            <p className="text-[11px] uppercase tracking-[0.2em] font-medium" style={{ color: 'var(--text-secondary)' }}>
               {dateStr}
-            </motion.p>
-            <motion.h1
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.15 }}
-              className="text-2xl sm:text-3xl font-editorial font-bold tracking-tight"
+            </p>
+            <h1
+              className="text-2xl sm:text-3xl font-editorial font-bold tracking-tight mt-0.5"
               style={{ color: 'var(--text-primary)' }}
             >
               {getGreeting()}, {firstName}
-            </motion.h1>
+            </h1>
           </div>
-
-          {/* Action Buttons */}
-          <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex items-center gap-2"
-          >
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSmartBudgetModal(true)}
-              className="button-editorial flex items-center gap-2 px-3 py-2.5 text-white transition-all hover:opacity-90"
+              className="button-editorial flex items-center gap-1.5 px-3 py-2 text-white hover:opacity-90 transition-opacity"
               style={{ backgroundColor: 'var(--accent-ink)' }}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -217,98 +168,126 @@ export default function Dashboard() {
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="button-editorial flex items-center gap-2 px-3 py-2.5 transition-all hover:opacity-80"
+              className="button-editorial p-2 hover:opacity-80 transition-opacity"
               style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+              title="Importar"
             >
               <Upload className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setShowScanModal(true)}
-              className="button-editorial flex items-center gap-2 px-3 py-2.5 transition-all hover:opacity-80"
+              className="button-editorial p-2 hover:opacity-80 transition-opacity"
               style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+              title="Escanear recibo"
             >
               <Scan className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="button-editorial flex items-center gap-2 px-4 py-2.5 font-bold transition-all hover:opacity-90"
+              className="button-editorial flex items-center gap-1.5 px-3 py-2 font-bold hover:opacity-90 transition-opacity"
               style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }}
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Transacao</span>
+              <span className="hidden sm:inline">Adicionar</span>
             </button>
-          </motion.div>
+          </div>
         </motion.div>
 
         <SyncStatus />
-        <OpenFinanceCTA />
 
-        {/* Onboarding Cards for new users */}
+        {/* ===== AI INSIGHT BANNER (promoted to top) ===== */}
+        <AnimatePresence>
+          {aiInsight && !dismissedInsight && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              className="card-editorial p-4 relative overflow-hidden"
+              style={{ borderLeft: `3px solid ${aiInsight.type === 'warning' ? '#f59e0b' : aiInsight.type === 'success' ? '#10b981' : 'var(--accent-ink)'}` }}
+            >
+              <button
+                onClick={() => setDismissedInsight(true)}
+                className="absolute top-2.5 right-2.5 p-1 opacity-30 hover:opacity-100 transition-opacity"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+              <div className="flex items-start gap-3 pr-6">
+                <div
+                  className="w-7 h-7 flex items-center justify-center rounded-lg shrink-0 mt-0.5"
+                  style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] uppercase tracking-[0.2em] font-bold" style={{ color: 'var(--accent-ink)' }}>
+                      {aiInsight.title || 'Cash IA'}
+                    </span>
+                  </div>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                    {aiInsight.message}
+                  </p>
+                  {aiInsight.actionableAdvice && (
+                    <p className="text-xs mt-1 italic" style={{ color: 'var(--text-secondary)' }}>
+                      {aiInsight.actionableAdvice}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ===== ONBOARDING (new users only) ===== */}
         {!hasData && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.2 }}
+            className="card-editorial p-6 relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-input) 100%)' }}
           >
-            {/* Welcome Card */}
-            <div
-              className="card-editorial p-6 mb-4 relative overflow-hidden"
-              style={{ background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-input) 100%)' }}
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="w-12 h-12 flex items-center justify-center rounded-2xl shrink-0"
-                  style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
-                >
-                  <Lightbulb className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
-                    Bem-vindo ao WealthCash!
-                  </h2>
-                  <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                    Comece adicionando sua primeira transacao para ver seus dados financeiros ganharem vida.
-                    Quanto mais dados, mais inteligente ficam as sugestoes da IA.
-                  </p>
+            <div className="flex items-start gap-4">
+              <div
+                className="w-11 h-11 flex items-center justify-center rounded-2xl shrink-0"
+                style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
+              >
+                <Lightbulb className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
+                  Comece aqui
+                </h2>
+                <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Adicione sua primeira transacao, importe um extrato ou escaneie um recibo. Quanto mais dados, mais inteligente fica a IA.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="button-editorial flex items-center gap-1.5 px-3 py-2 font-bold hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-cream)' }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Nova Transacao
+                  </button>
+                  <button
+                    onClick={() => setShowImportModal(true)}
+                    className="button-editorial flex items-center gap-1.5 px-3 py-2 hover:opacity-80 transition-opacity"
+                    style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Importar
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Action Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <QuickActionCard
-                icon={Plus}
-                label="Nova Transacao"
-                description="Registre receitas e despesas"
-                onClick={() => setShowAddModal(true)}
-                accent="#10b981"
-              />
-              <QuickActionCard
-                icon={Upload}
-                label="Importar Dados"
-                description="Importe extratos CSV"
-                onClick={() => setShowImportModal(true)}
-                accent="#0ea5e9"
-              />
-              <QuickActionCard
-                icon={Scan}
-                label="Escanear Recibo"
-                description="Use a camera para registrar"
-                onClick={() => setShowScanModal(true)}
-                accent="#8b5cf6"
-              />
-              <QuickActionCard
-                icon={Sparkles}
-                label="Sugestao IA"
-                description="Orcamento inteligente"
-                onClick={() => setShowSmartBudgetModal(true)}
-                accent="var(--accent-ink)"
-              />
             </div>
           </motion.div>
         )}
 
-        {/* KPI Cards */}
+        <OpenFinanceCTA />
+
+        {/* ===== HERO BALANCE + KPIs ===== */}
         <DashboardOverview
           stats={dashboard?.stats || null}
           chartData={(dashboard as any)?.chartData}
@@ -316,10 +295,10 @@ export default function Dashboard() {
           preferredCurrency={dashboard?.preferredCurrency}
         />
 
-        {/* Main Grid */}
+        {/* ===== MAIN GRID ===== */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-          {/* Left Column */}
+          {/* Left Column - Charts + Transactions */}
           <div className="lg:col-span-2 space-y-4">
             <Charts
               data={(dashboard as any)?.chartData || []}
@@ -327,104 +306,122 @@ export default function Dashboard() {
               onSelect={(month) => setSelectedMonth(month === selectedMonth ? null : month)}
               preferredCurrency={dashboard?.preferredCurrency}
             />
-            <CashFlowForecast preferredCurrency={dashboard?.preferredCurrency} />
+
             <Transactions
               data={filteredTransactions}
-              limit={selectedMonth ? undefined : 6}
+              limit={selectedMonth ? undefined : 5}
               onDelete={fetchDashboard}
               onBulkDelete={fetchDashboard}
               preferredCurrency={dashboard?.preferredCurrency}
             />
           </div>
 
-          {/* Right Column */}
+          {/* Right Column - Budget + Quick Links */}
           <div className="space-y-4">
             <BudgetProgress
               budgets={dashboard?.budgets || []}
               preferredCurrency={dashboard?.preferredCurrency}
             />
 
-            {/* AI Coach */}
-            <AnimatePresence>
-              {showAiCoach && aiInsight && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className="card-editorial p-5 relative overflow-hidden"
-                >
-                  {/* Accent top */}
-                  <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: 'var(--accent-ink)', opacity: 0.6 }} />
-
-                  <button
-                    onClick={() => setShowAiCoach(false)}
-                    className="absolute top-3 right-3 p-1 opacity-40 hover:opacity-100 transition-opacity"
-                    style={{ color: 'var(--text-secondary)' }}
+            {/* Quick Navigation */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="card-editorial p-4 relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: 'var(--accent-gold)', opacity: 0.3 }} />
+              <p className="text-[10px] uppercase tracking-[0.15em] font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
+                Acesso rapido
+              </p>
+              <div className="space-y-1">
+                {[
+                  { label: 'Relatorios', href: '/relatorios', color: '#0ea5e9' },
+                  { label: 'Objetivos', href: '/goals', color: '#8b5cf6' },
+                  { label: 'Investimentos', href: '/investments', color: '#10b981' },
+                  { label: 'Assinaturas', href: '/recorrencias', color: '#f59e0b' },
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center justify-between py-2 px-2 -mx-2 rounded-lg transition-colors group"
+                    style={{ color: 'var(--text-primary)' }}
                   >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <div className="flex items-center gap-2.5 mb-4">
-                    <div
-                      className="w-8 h-8 flex items-center justify-center rounded-lg"
-                      style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)' }}
-                    >
-                      <Bot className="w-4 h-4" />
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm font-medium">{item.label}</span>
                     </div>
-                    <span
-                      className="text-[10px] uppercase tracking-[0.2em] font-bold"
-                      style={{ color: 'var(--accent-ink)' }}
-                    >
-                      {aiInsight?.title || 'Cash IA Coach'}
-                    </span>
-                  </div>
+                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: 'var(--text-secondary)' }} />
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
 
-                  <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                    &quot;{aiInsight?.message}&quot;
-                  </p>
-
-                  {aiInsight?.actionableAdvice && (
-                    <p className="text-[11px] mt-2 italic font-serif" style={{ color: 'var(--text-secondary)' }}>
-                      {aiInsight.actionableAdvice}
-                    </p>
-                  )}
-
-                  <p className="text-[10px] mt-3 uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
-                    Use o chat no canto inferior direito para consultar
-                  </p>
+        {/* ===== CASH FLOW FORECAST (collapsible) ===== */}
+        {hasData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <button
+              onClick={() => setShowForecast(!showForecast)}
+              className="w-full flex items-center justify-between py-3 px-1 group"
+            >
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" style={{ color: 'var(--accent-ink)' }} />
+                <span className="text-sm font-editorial font-bold" style={{ color: 'var(--text-primary)' }}>
+                  Projecao de Fluxo de Caixa
+                </span>
+                <span
+                  className="px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest rounded-full"
+                  style={{ backgroundColor: 'var(--accent-ink)', color: 'var(--bg-cream)', opacity: 0.8 }}
+                >
+                  IA
+                </span>
+              </div>
+              {showForecast
+                ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+                : <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+              }
+            </button>
+            <AnimatePresence>
+              {showForecast && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <CashFlowForecast preferredCurrency={dashboard?.preferredCurrency} />
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        </div>
+          </motion.div>
+        )}
       </div>
 
+      {/* ===== MODALS ===== */}
       <AnimatePresence>
         {showAddModal && (
           <AddTransactionModal
             onClose={() => setShowAddModal(false)}
-            onSuccess={() => {
-              setShowAddModal(false);
-              fetchDashboard();
-            }}
+            onSuccess={() => { setShowAddModal(false); fetchDashboard(); }}
           />
         )}
         {showSmartBudgetModal && (
           <SmartBudgetModal
             onClose={() => setShowSmartBudgetModal(false)}
-            onSuccess={() => {
-              setShowSmartBudgetModal(false);
-              fetchDashboard();
-            }}
+            onSuccess={() => { setShowSmartBudgetModal(false); fetchDashboard(); }}
           />
         )}
         {showScanModal && (
           <ReceiptScanner
             onClose={() => setShowScanModal(false)}
-            onSuccess={() => {
-              setShowScanModal(false);
-              fetchDashboard();
-            }}
+            onSuccess={() => { setShowScanModal(false); fetchDashboard(); }}
           />
         )}
       </AnimatePresence>
