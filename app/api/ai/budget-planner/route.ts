@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit } from '@/lib/rate-limit';
-import { getGeminiClient } from '@/lib/gemini';
+import { geminiGenerateWithRetry } from '@/lib/gemini';
 
 export async function POST() {
     const session = await auth();
@@ -49,13 +49,11 @@ export async function POST() {
             monthlyAverage: Number((total / 3).toFixed(2))
         }));
 
-        const ai = getGeminiClient();
-
-        const prompt = `Atue como um planejador financeiro rigoroso mas realista. 
+        const prompt = `Atue como um planejador financeiro rigoroso mas realista.
 Aqui está a média mensal de gastos de um usuário real baseada nos últimos 3 meses:
 ${JSON.stringify(averages, null, 2)}
 
-Sua tarefa é sugerir um teto de gastos ideal (budget) para o próximo mês por categoria. 
+Sua tarefa é sugerir um teto de gastos ideal (budget) para o próximo mês por categoria.
 - Tente aplicar uma regra de redução suave (5% a 10%) nas despesas não essenciais (ex: Lazer, Outros) para incentivar economia.
 - Para despesas essenciais (ex: Moradia, Alimentação), mantenha o valor próximo da média a não ser que pareça muito inflado.
 - Se o gasto médio for pífio, você pode arredondar ou dar um limite seguro.
@@ -72,11 +70,10 @@ Sua tarefa é sugerir um teto de gastos ideal (budget) para o próximo mês por 
 }
 Não inclua nenhum texto Markdown ou backticks \`\`\`json na resposta, APENAS O JSON PURO.`;
 
-        const response = await ai.models.generateContent({
-            model: 'models/gemini-2.0-flash',
-            contents: prompt,
+        const response = await geminiGenerateWithRetry({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
-                temperature: 0.2, // Low temp for more deterministic parsing
+                temperature: 0.2,
             }
         });
 

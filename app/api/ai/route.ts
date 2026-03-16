@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { aiRatelimit } from '@/lib/rate-limit';
 import { getPlanLimits } from '@/lib/plans';
-import { getGeminiClient } from '@/lib/gemini';
+import { geminiGenerateWithRetry } from '@/lib/gemini';
 import { sanitize } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 
@@ -223,20 +223,13 @@ ${context}`;
         }
         contents.push({ role: 'user', parts: currentParts });
 
-        const geminiTimeout = setTimeout(() => {}, 30_000);
-        let response;
-        try {
-            response = await getGeminiClient().models.generateContent({
-                model: 'models/gemini-2.0-flash',
-                contents,
-                config: {
-                    maxOutputTokens: 1000,
-                    temperature: 0.7,
-                }
-            });
-        } finally {
-            clearTimeout(geminiTimeout);
-        }
+        const response = await geminiGenerateWithRetry({
+            contents,
+            config: {
+                maxOutputTokens: 1000,
+                temperature: 0.7,
+            }
+        });
 
         let reply = response.text || 'Desculpe, não consegui processar sua pergunta. Tente novamente.';
 
@@ -303,8 +296,8 @@ ${context}`;
 
         // Detect specific Gemini API rejections
         if (error.status === 429) {
-            return NextResponse.json({ 
-                error: 'Limite de quota do Gemini Free atingido (15 consultas/min). Aguarde um instante ou verifique se há excesso de mensagens.' 
+            return NextResponse.json({
+                error: 'O serviço de IA está temporariamente sobrecarregado. Aguarde 1 minuto e tente novamente.'
             }, { status: 429 });
         }
         if (error.status === 403 || error.status === 400) {

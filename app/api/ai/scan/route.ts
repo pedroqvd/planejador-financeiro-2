@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getGeminiClient } from '@/lib/gemini';
+import { geminiGenerateWithRetry } from '@/lib/gemini';
 import { ratelimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
@@ -49,8 +49,7 @@ export async function POST(request: Request) {
             4. Se o nome não estiver claro, use "Compra Scanned".
         `;
 
-        const response = await getGeminiClient().models.generateContent({
-            model: 'models/gemini-2.0-flash',
+        const response = await geminiGenerateWithRetry({
             contents: [
                 {
                     role: 'user',

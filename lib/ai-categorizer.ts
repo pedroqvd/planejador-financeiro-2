@@ -1,4 +1,4 @@
-import { getGeminiClient } from '@/lib/gemini';
+import { geminiGenerateWithRetry } from '@/lib/gemini';
 
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Outros'];
 
@@ -13,7 +13,6 @@ export async function categorizeTransactionsBatch(transactions: { id: string, na
 
     if (transactions.length === 0) return {};
 
-    const ai = getGeminiClient();
     const prompt = `
 Você é um assistente financeiro no Brasil. Sua tarefa é analisar a lista de nomes de transações financeiras (geralmente extraídas de cartão de crédito ou extrato bancário) e classificá-las em EXATAMENTE UMA das seguintes categorias válidas:
 ${VALID_CATEGORIES.join(', ')}
@@ -26,9 +25,8 @@ ${JSON.stringify(transactions)}
 `;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
+        const response = await geminiGenerateWithRetry({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
         });
 
         let text = response.text || '{}';

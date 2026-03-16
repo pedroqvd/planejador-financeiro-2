@@ -3,10 +3,15 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getGeminiClient } from '@/lib/gemini';
+import { geminiGenerateWithRetry } from '@/lib/gemini';
 import { aiCoachRatelimit } from '@/lib/rate-limit';
 import { sendPushNotification } from '@/lib/firebase-admin';
 import { logger } from '@/lib/logger';
+
+// Simple in-memory cache to avoid burning Gemini quota on every page load
+// Key: userId, Value: { data, timestamp }
+const insightCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 export async function GET() {
     const session = await auth();
@@ -17,10 +22,20 @@ export async function GET() {
     const userId = session.user.id;
     const userPlan = session.user.plan || 'free';
 
+    // Check in-memory cache first — avoids Gemini calls on page refreshes
+    const cached = insightCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        return NextResponse.json(cached.data);
+    }
+
     // Rate limit check: 3 per 10 mins (free gets 1 per 10 mins)
     try {
         const { success } = await aiCoachRatelimit.limit(`coach:${userId}`);
         if (!success) {
+            // Return cached data if available (even if slightly stale), instead of error
+            if (cached) {
+                return NextResponse.json(cached.data);
+            }
             return NextResponse.json({ error: 'Limite de insights atingido. Aguarde um instante.' }, { status: 429 });
         }
     } catch { /* dev fallback */ }
@@ -98,7 +113,7 @@ ${goals.length > 0
             }
 `.trim();
 
-        const systemPrompt = `Você é o "Treinador Financeiro Ativo" do WealthCash. 
+        const systemPrompt = `Você é o "Treinador Financeiro Ativo" do WealthCash.
 Sua função é gerar 1 ÚNICO INSIGHT PRÓ-ATIVO para ser exibido como push notification surpresa para o usuário.
 
 REGRAS RÍGIDAS DE SAÍDA:
@@ -119,12 +134,11 @@ FORMATO JSON OBRIGATÓRIO DA RESPOSTA:
 Analise os dados abaixo e gere o insight:
 ${context}`;
 
-        const response = await getGeminiClient().models.generateContent({
-            model: 'gemini-2.0-flash',
+        const response = await geminiGenerateWithRetry({
             contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
             config: {
-                maxOutputTokens: 250, // Strict cost constraint for automated notifications
-                temperature: 0.6,    // Less hallucination, more analytical
+                maxOutputTokens: 250,
+                temperature: 0.6,
             }
         });
 
@@ -139,6 +153,17 @@ ${context}`;
             return NextResponse.json({ error: 'Falha ao processar análise da IA.' }, { status: 500 });
         }
 
+        // Cache the result
+        insightCache.set(userId, { data: insightJson, timestamp: Date.now() });
+
+        // Cleanup old cache entries (prevent memory leak)
+        if (insightCache.size > 500) {
+            const cutoff = Date.now() - CACHE_TTL_MS * 2;
+            for (const [key, value] of insightCache.entries()) {
+                if (value.timestamp < cutoff) insightCache.delete(key);
+            }
+        }
+
         if (insightJson && userRecord?.fcmToken) {
             // FIREBASE DISPATCH: Acorda a tela bloqueada do celular do usuário
             await sendPushNotification(
@@ -150,8 +175,19 @@ ${context}`;
         }
 
         return NextResponse.json(insightJson);
-    } catch (error) {
+    } catch (error: any) {
         logger.error('Coach API error:', error);
+
+        // On Gemini errors, return cached data if available
+        if (cached) {
+            return NextResponse.json(cached.data);
+        }
+
+        // User-friendly error messages (don't expose internals)
+        if (error.status === 429) {
+            return NextResponse.json({ error: 'O serviço de IA está ocupado. Tente novamente em instantes.' }, { status: 429 });
+        }
+
         return NextResponse.json({ error: 'Erro interno do Treinador IA.' }, { status: 500 });
     }
 }

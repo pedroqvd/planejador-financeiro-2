@@ -96,20 +96,47 @@ export const AIAdvisor = forwardRef<AIAdvisorHandle, { initialMessage?: string }
 
         const data = await res.json();
 
-        setMessages(prev => [
-          ...prev,
-          {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: res.ok
-              ? data.reply
-              : data.error || 'Erro ao consultar IA.',
-          },
-        ]);
+        if (res.ok) {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: data.reply,
+            },
+          ]);
+        } else if (res.status === 429) {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: 'Estou com muitas consultas no momento. Aguarde **1 minuto** e tente novamente.',
+            },
+          ]);
+        } else if (res.status === 403) {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: data.error || 'Voce atingiu o limite diario de consultas. Faca **upgrade** para continuar!',
+            },
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: 'Desculpe, tive um problema ao processar sua mensagem. Tente novamente em instantes.',
+            },
+          ]);
+        }
       } catch {
         setMessages(prev => [
           ...prev,
-          { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexão. Tente novamente.' },
+          { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Erro de conexao. Verifique sua internet e tente novamente.' },
         ]);
       } finally {
         setLoading(false);

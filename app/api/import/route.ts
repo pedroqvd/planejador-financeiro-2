@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ratelimit, getClientIp } from '@/lib/rate-limit';
-import { getGeminiClient } from '@/lib/gemini';
+import { geminiGenerateWithRetry } from '@/lib/gemini';
 
 const VALID_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Salário', 'Saúde', 'Educação', 'Compras', 'Outros'];
 
@@ -79,29 +79,21 @@ REGRAS:
 Se você não identificar o ano no documento, presuma o ano atual.
 Execute agora. Retorne o [ ... ] JSON.`;
 
-        const importAbort = new AbortController();
-        const importTimeout = setTimeout(() => importAbort.abort(), 60_000); // 60s for large files
-        let response;
-        try {
-            response = await getGeminiClient().models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: [
-                    {
-                        role: 'user',
-                        parts: [
-                            { text: prompt },
-                            { inlineData: { data: buffer.toString('base64'), mimeType } }
-                        ]
-                    }
-                ],
-                config: {
-                    temperature: 0.1,
-                    responseMimeType: "application/json"
+        const response = await geminiGenerateWithRetry({
+            contents: [
+                {
+                    role: 'user',
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { data: buffer.toString('base64'), mimeType } }
+                    ]
                 }
-            });
-        } finally {
-            clearTimeout(importTimeout);
-        }
+            ],
+            config: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
+            }
+        });
 
         const reply = response.text || '';
         const cleanJSON = reply.replace(/```json/g, '').replace(/```/g, '').trim();
