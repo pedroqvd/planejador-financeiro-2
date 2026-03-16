@@ -135,6 +135,17 @@ export async function POST(request: Request) {
         );
     } catch (error) {
         console.error('Registration error:', error);
+
+        // Provide more specific error messages for known failure modes
+        const message = error instanceof Error ? error.message : '';
+        if (message.includes('Unique constraint') && message.includes('referralCode')) {
+            // Extremely rare referral code collision — retry would fix
+            return NextResponse.json(
+                { error: 'Erro ao gerar código de referência. Tente novamente.' },
+                { status: 500 }
+            );
+        }
+
         return NextResponse.json(
             { error: 'Erro interno do servidor.' },
             { status: 500 }
