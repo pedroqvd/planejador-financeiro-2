@@ -132,8 +132,11 @@ export function Transactions({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.4 }}
-      className="card-editorial p-6 relative"
+      className="card-editorial p-6 relative overflow-hidden"
     >
+      {/* Accent line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: 'var(--accent-gold)', opacity: 0.4 }} />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center space-x-3">
           <button
@@ -195,10 +198,22 @@ export function Transactions({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 text-sm"
-              style={{ color: 'var(--text-secondary)' }}
+              className="flex flex-col items-center justify-center py-12 gap-3"
             >
-              {filter ? 'Nenhum resultado para este filtro.' : 'Nenhuma transação registrada ainda.'}
+              <div
+                className="w-14 h-14 flex items-center justify-center rounded-2xl"
+                style={{ backgroundColor: 'var(--bg-input)', border: '1px dashed var(--border-color)' }}
+              >
+                <Wallet className="w-6 h-6" style={{ color: 'var(--text-secondary)', opacity: 0.5 }} />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-editorial font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {filter ? 'Nenhum resultado' : 'Nenhuma transacao'}
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  {filter ? 'Tente outro termo de busca.' : 'Adicione sua primeira transacao para comecar.'}
+                </p>
+              </div>
             </motion.div>
           ) : (
             displayData.map((transaction) => {

@@ -73,8 +73,11 @@ export function CashFlowForecast({ preferredCurrency = 'BRL' }: { preferredCurre
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card-editorial p-6"
+            className="card-editorial p-6 relative overflow-hidden"
         >
+            {/* Accent line */}
+            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: 'var(--accent-ink)', opacity: 0.4 }} />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
                 <div>
