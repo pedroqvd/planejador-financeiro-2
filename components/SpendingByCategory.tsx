@@ -47,7 +47,12 @@ export function SpendingByCategory({
   transactions: Transaction[];
   preferredCurrency?: string;
 }) {
-  const categories = useMemo(() => {
+  const donutSize = 64;
+  const strokeWidth = 8;
+  const radius = (donutSize - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const { entries, total, arcs } = useMemo(() => {
     const map = new Map<string, number>();
     transactions
       .filter(t => t.type === 'expense')
@@ -55,31 +60,30 @@ export function SpendingByCategory({
         map.set(t.category, (map.get(t.category) || 0) + Math.abs(t.amount));
       });
 
-    const entries = Array.from(map.entries())
+    const e = Array.from(map.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
-    const total = entries.reduce((sum, [, v]) => sum + v, 0);
-    return { entries, total };
-  }, [transactions]);
+    const t = e.reduce((sum, [, v]) => sum + v, 0);
 
-  if (categories.entries.length === 0) return null;
+    const a = e.reduce<{ arcs: { cat: string; amount: number; pct: number; dashLength: number; gap: number; offset: number }[]; acc: number }>(
+      (state, [cat, amount]) => {
+        const pct = t > 0 ? amount / t : 0;
+        const dashLength = pct * circumference;
+        const gap = circumference - dashLength;
+        const offset = -state.acc;
+        return {
+          arcs: [...state.arcs, { cat, amount, pct, dashLength, gap, offset }],
+          acc: state.acc + dashLength,
+        };
+      },
+      { arcs: [], acc: 0 }
+    );
 
-  // Mini donut data
-  const donutSize = 64;
-  const strokeWidth = 8;
-  const radius = (donutSize - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
+    return { entries: e, total: t, arcs: a.arcs };
+  }, [transactions, circumference]);
 
-  let accumulatedOffset = 0;
-  const arcs = categories.entries.map(([cat, amount]) => {
-    const pct = categories.total > 0 ? amount / categories.total : 0;
-    const dashLength = pct * circumference;
-    const gap = circumference - dashLength;
-    const offset = -accumulatedOffset;
-    accumulatedOffset += dashLength;
-    return { cat, amount, pct, dashLength, gap, offset };
-  });
+  if (entries.length === 0) return null;
 
   return (
     <motion.div
@@ -121,17 +125,17 @@ export function SpendingByCategory({
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-[9px] font-bold" style={{ color: 'var(--text-primary)' }}>
-              {categories.entries.length}
+              {entries.length}
             </span>
           </div>
         </div>
 
         {/* Category List */}
         <div className="flex-1 space-y-1.5 min-w-0">
-          {categories.entries.map(([cat, amount], i) => {
+          {entries.map(([cat, amount], i) => {
             const conf = getConfig(cat);
             const Icon = conf.icon;
-            const pct = categories.total > 0 ? Math.round((amount / categories.total) * 100) : 0;
+            const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
 
             return (
               <motion.div
