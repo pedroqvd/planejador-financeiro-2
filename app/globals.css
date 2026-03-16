@@ -437,3 +437,91 @@ h3,
 .animate-fade-in {
   animation: fade-in-up 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
+
+/* ===== Focus Ring System ===== */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent-ink) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-ink) 12%, transparent) !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.empty-state-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  max-width: 280px;
+}
+
+/* ===== Backdrop overlay ===== */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.dark .modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ===== Close button consistency ===== */
+.btn-close {
+  padding: 0.5rem;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.btn-close:hover {
+  opacity: 1;
+  color: var(--text-primary);
+}
+
+/* ===== Dropdown panel ===== */
+.dropdown-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ===== Badge consistent ===== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border-color);
+}

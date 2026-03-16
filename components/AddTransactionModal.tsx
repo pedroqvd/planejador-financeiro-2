@@ -121,16 +121,17 @@ export function AddTransactionModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+            <div className="absolute inset-0 modal-backdrop" onClick={onClose} />
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                className={clsx(
-                    "relative border rounded-2xl p-6 w-full max-w-md shadow-2xl transition-colors duration-500",
-                    isExpense ? "bg-rose-50/5 border-rose-200/20" : "bg-emerald-50/5 border-emerald-200/20",
-                    "bg-[#fdf9f0] shadow-black/20" // Matching dashboard theme
-                )}
+                className="relative rounded-2xl p-6 w-full max-w-md shadow-2xl transition-colors duration-500"
+                style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: `1px solid ${isExpense ? 'rgba(244,63,94,0.2)' : 'rgba(16,185,129,0.2)'}`,
+                    boxShadow: 'var(--shadow-lg)',
+                }}
             >
                 <div className={clsx(
                     "flex items-center justify-between p-6 -mx-6 -mt-6 mb-6 rounded-t-2xl transition-colors duration-500",
@@ -151,7 +152,7 @@ export function AddTransactionModal({
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Type selector - SEMANTIC REDESIGN */}
-                    <div className="p-1 bg-zinc-200/50 rounded-xl flex items-center gap-1">
+                    <div className="p-1 rounded-xl flex items-center gap-1" style={{ backgroundColor: 'var(--bg-input)' }}>
                         <button
                             type="button"
                             onClick={() => handleTypeChange('expense')}
@@ -187,7 +188,7 @@ export function AddTransactionModal({
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className={clsx(
-                                    "w-full px-4 py-3 border bg-white rounded-xl text-sm text-zinc-900 focus:outline-none transition-all",
+                                    "w-full px-4 py-3 border rounded-xl text-sm focus:outline-none transition-all",
                                     isExpense ? "border-rose-100 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400" : "border-emerald-100 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400"
                                 )}
                                 placeholder={isExpense ? "Ex: Mercado, Uber, Netflix..." : "Ex: Salário, Freelance, Dividendos..."}
@@ -210,7 +211,7 @@ export function AddTransactionModal({
                                             value={amount}
                                             onChange={(e) => setAmount(e.target.value)}
                                             className={clsx(
-                                                "w-full px-4 py-3 border bg-white rounded-xl text-sm font-bold text-zinc-900 focus:outline-none transition-all",
+                                                "w-full px-4 py-3 border rounded-xl text-sm font-bold focus:outline-none transition-all",
                                                 isExpense ? "border-rose-100 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400" : "border-emerald-100 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400"
                                             )}
                                             placeholder="0,00"
@@ -221,7 +222,7 @@ export function AddTransactionModal({
                                         value={currency}
                                         onChange={(e) => setCurrency(e.target.value)}
                                         className={clsx(
-                                            "px-3 py-3 w-28 border bg-white rounded-xl text-sm font-bold text-zinc-900 focus:outline-none transition-all appearance-none cursor-pointer",
+                                            "px-3 py-3 w-28 border rounded-xl text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer",
                                             isExpense ? "border-rose-100 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400" : "border-emerald-100 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400"
                                         )}
                                     >
@@ -243,7 +244,7 @@ export function AddTransactionModal({
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
                                     className={clsx(
-                                        "w-full px-4 py-3 border bg-white rounded-xl text-sm text-zinc-900 focus:outline-none transition-all appearance-none cursor-pointer",
+                                        "w-full px-4 py-3 border rounded-xl text-sm focus:outline-none transition-all appearance-none cursor-pointer",
                                         isExpense ? "border-rose-100 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-400" : "border-emerald-100 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400"
                                     )}
                                 >

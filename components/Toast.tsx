@@ -27,11 +27,11 @@ const icons: Record<ToastType, React.ComponentType<{ className?: string }>> = {
     info: Info,
 };
 
-const styles: Record<ToastType, string> = {
-    success: 'border-zinc-900 bg-zinc-900 text-white',
-    error: 'border-zinc-200 bg-white text-zinc-900',
-    warning: 'border-zinc-300 bg-zinc-50 text-zinc-900',
-    info: 'border-zinc-200 bg-white text-zinc-700',
+const toastStyles: Record<ToastType, { bg: string; border: string; text: string; iconBg: string }> = {
+    success: { bg: '#10b981', border: '#10b981', text: '#ffffff', iconBg: 'rgba(255,255,255,0.2)' },
+    error: { bg: '#f43f5e', border: '#f43f5e', text: '#ffffff', iconBg: 'rgba(255,255,255,0.2)' },
+    warning: { bg: 'var(--bg-card)', border: '#f59e0b', text: 'var(--text-primary)', iconBg: 'rgba(245,158,11,0.15)' },
+    info: { bg: 'var(--bg-card)', border: 'var(--accent-ink)', text: 'var(--text-primary)', iconBg: 'color-mix(in srgb, var(--accent-ink) 15%, transparent)' },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -64,9 +64,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                                 transition={{ duration: 0.2 }}
-                                className={`pointer-events-auto flex items-center space-x-3 px-4 py-3 border shadow-lg min-w-[280px] max-w-[400px] ${styles[t.type]}`}
+                                className="pointer-events-auto flex items-center space-x-3 px-4 py-3 shadow-lg min-w-[280px] max-w-[400px]"
+                                style={{
+                                    backgroundColor: toastStyles[t.type].bg,
+                                    borderLeft: `3px solid ${toastStyles[t.type].border}`,
+                                    color: toastStyles[t.type].text,
+                                    boxShadow: 'var(--shadow-lg)',
+                                }}
                             >
-                                <div className={`w-6 h-6 flex items-center justify-center flex-shrink-0 ${t.type === 'success' ? 'bg-white/20' : 'border border-zinc-200'}`}>
+                                <div
+                                    className="w-6 h-6 flex items-center justify-center flex-shrink-0"
+                                    style={{ backgroundColor: toastStyles[t.type].iconBg }}
+                                >
                                     <IconComp className="w-3.5 h-3.5" />
                                 </div>
                                 <p className="text-sm font-medium flex-1">{t.message}</p>

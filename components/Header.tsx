@@ -98,7 +98,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
   const handleChange = (val: string) => {
     setQuery(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(() => doSearch(val), 300) as any;
+    debounceRef.current = setTimeout(() => doSearch(val), 300);
   };
 
   const clearSearch = () => {
@@ -150,27 +150,27 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
           )}
 
           {showResults && results && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 shadow-lg max-h-80 overflow-y-auto z-50">
+            <div className="dropdown-panel absolute top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto z-50">
               {results.pages.length > 0 && (
                 <div className="p-2">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-2 py-1">Páginas</p>
+                  <p className="text-[10px] uppercase tracking-wider font-medium px-2 py-1" style={{ color: 'var(--text-secondary)' }}>Páginas</p>
                   {results.pages.map((page) => (
-                    <button key={page.path} onClick={() => navigateTo(page.path)} className="w-full text-left px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors">
+                    <button key={page.path} onClick={() => navigateTo(page.path)} className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 transition-colors" style={{ color: 'var(--text-primary)' }}>
                       {page.name}
                     </button>
                   ))}
                 </div>
               )}
               {results.transactions.length > 0 && (
-                <div className="p-2 border-t border-zinc-100">
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-2 py-1">Transações</p>
+                <div className="p-2" style={{ borderTop: '1px solid var(--border-color)' }}>
+                  <p className="text-[10px] uppercase tracking-wider font-medium px-2 py-1" style={{ color: 'var(--text-secondary)' }}>Transações</p>
                   {results.transactions.map((tx) => (
                     <button key={tx.id} onClick={() => navigateTo('/transactions')} className="w-full text-left px-3 py-2 hover:bg-zinc-50 transition-colors flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-zinc-800 font-medium">{tx.name}</p>
-                        <p className="text-[10px] text-zinc-400 uppercase tracking-wider">{tx.category}</p>
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{tx.name}</p>
+                        <p className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>{tx.category}</p>
                       </div>
-                      <span className={`text-xs font-editorial font-bold ${tx.type === 'income' ? 'text-zinc-900' : 'text-zinc-500'}`}>
+                      <span className="text-xs font-editorial font-bold" style={{ color: tx.type === 'income' ? '#10b981' : '#f43f5e' }}>
                         {tx.type === 'income' ? '+' : '-'}{tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </span>
                     </button>
@@ -178,7 +178,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 </div>
               )}
               {results.transactions.length === 0 && results.pages.length === 0 && (
-                <div className="p-4 text-sm text-zinc-400 text-center">
+                <div className="p-4 text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
                   Nenhum resultado para &quot;{query}&quot;
                 </div>
               )}
@@ -212,7 +212,7 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
             className="p-2 text-zinc-500 hover:text-zinc-900 relative transition-colors duration-200 hover:bg-zinc-100 rounded-full"
           >
             {notifications.length > 0 && (
-              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-zinc-900 ring-2 ring-white" />
+              <span className="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2" style={{ backgroundColor: 'var(--accent-ink)', ringColor: 'var(--bg-card)' }} />
             )}
             <Bell className="w-[18px] h-[18px]" />
           </button>
@@ -224,41 +224,41 @@ export function Header({ onMenuToggle }: { onMenuToggle?: () => void }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.97 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-80 bg-white border border-zinc-200 shadow-xl z-50"
+                className="dropdown-panel absolute right-0 top-full mt-2 w-80 z-50"
               >
-                <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
-                  <h3 className="text-xs font-medium text-zinc-900 uppercase tracking-wider">Notificações</h3>
+                <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <h3 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Notificações</h3>
                   {notifications.length > 0 && (
-                    <button onClick={() => markAsRead('all')} className="text-[10px] text-zinc-500 hover:text-zinc-900 uppercase tracking-wider transition-colors">
-                      Marcar lídas
+                    <button onClick={() => markAsRead('all')} className="text-[10px] uppercase tracking-wider transition-colors hover:opacity-70" style={{ color: 'var(--accent-ink)' }}>
+                      Marcar lidas
                     </button>
                   )}
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {!notifsLoaded ? (
                     <div className="p-4 text-center">
-                      <div className="h-4 w-4 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin mx-auto" />
+                      <div className="h-4 w-4 border-2 rounded-full animate-spin mx-auto" style={{ borderColor: 'var(--border-color)', borderTopColor: 'var(--accent-ink)' }} />
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="p-6 text-center">
-                      <p className="text-sm text-zinc-400">Nenhuma notificação</p>
-                      <p className="text-[10px] text-zinc-300 uppercase tracking-wider mt-1">Tudo em dia!</p>
+                      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Nenhuma notificação</p>
+                      <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>Tudo em dia!</p>
                     </div>
                   ) : (
-                    notifications.map((n: any) => {
+                    notifications.map((n: Notification) => {
                       const IconComp = notifIcons[n.type] || Info;
                       return (
-                        <div key={n.id} className="px-4 py-3 border-b border-zinc-50 hover:bg-zinc-50 transition-colors">
+                        <div key={n.id} className="px-4 py-3 hover:bg-zinc-50 transition-colors" style={{ borderBottom: '1px solid var(--border-color)' }}>
                           <div className="flex items-start space-x-3 relative group">
-                            <div className="w-7 h-7 border border-zinc-200 flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <IconComp className="w-3.5 h-3.5 text-zinc-500" />
+                            <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                              <IconComp className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex-1 min-w-0 pr-6">
-                              <p className="text-sm font-medium text-zinc-900">{n.title}</p>
-                              <p className="text-xs text-zinc-500 mt-0.5">{n.message}</p>
-                              <p className="text-[10px] text-zinc-400 uppercase tracking-wider mt-1">{n.time}</p>
+                              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
+                              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{n.message}</p>
+                              <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: 'var(--text-secondary)', opacity: 0.6 }}>{n.time}</p>
                             </div>
-                            <button onClick={() => markAsRead(n.id)} className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-zinc-900 transition-all">
+                            <button onClick={() => markAsRead(n.id)} className="btn-close absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 transition-all">
                               <X className="w-4 h-4" />
                             </button>
                           </div>
